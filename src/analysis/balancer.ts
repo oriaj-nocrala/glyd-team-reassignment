@@ -5,13 +5,10 @@ export class TeamBalancer {
   /**
    * Create balanced teams using snake draft distribution
    */
-  static createBalancedTeams(
-    playersWithScores: PlayerWithScore[],
-    targetTeams: number
-  ): Team[] {
+  static createBalancedTeams(playersWithScores: PlayerWithScore[], targetTeams: number): Team[] {
     // Sort players by composite score (highest first)
     const rankedPlayers = MetricsCalculator.rankPlayersByScore(playersWithScores);
-    
+
     // Initialize empty teams
     const teams: Team[] = [];
     for (let i = 0; i < targetTeams; i++) {
@@ -20,7 +17,7 @@ export class TeamBalancer {
         players: [],
         total_score: 0,
         average_score: 0,
-        size: 0
+        size: 0,
       });
     }
 
@@ -46,25 +43,10 @@ export class TeamBalancer {
     });
 
     // Calculate team statistics
-    return teams.map(team => this.calculateTeamStats(team));
-  }
-
-  /**
-   * Calculate statistics for a team
-   */
-  private static calculateTeamStats(team: Team): Team {
-    if (team.players.length === 0) {
-      return { ...team, total_score: 0, average_score: 0, size: 0 };
-    }
-
-    const total = team.players.reduce((sum, player) => sum + player.composite_score, 0);
-    
-    return {
-      ...team,
-      total_score: total,
-      average_score: total / team.players.length,
-      size: team.players.length
-    };
+    return teams.map((team) => {
+      const stats = MetricsCalculator.calculateTeamStats(team);
+      return { ...team, ...stats };
+    });
   }
 
   /**
@@ -75,7 +57,7 @@ export class TeamBalancer {
       return { isValid: false, message: 'No teams provided' };
     }
 
-    const sizes = teams.map(team => team.size);
+    const sizes = teams.map((team) => team.size);
     const minSize = Math.min(...sizes);
     const maxSize = Math.max(...sizes);
     const sizeDifference = maxSize - minSize;
@@ -83,7 +65,7 @@ export class TeamBalancer {
     if (sizeDifference > 1) {
       return {
         isValid: false,
-        message: `Team size difference is ${sizeDifference} (max allowed: 1). Sizes: [${sizes.join(', ')}]`
+        message: `Team size difference is ${sizeDifference} (max allowed: 1). Sizes: [${sizes.join(', ')}]`,
       };
     }
 
@@ -98,12 +80,14 @@ export class TeamBalancer {
       throw new Error('No teams to analyze');
     }
 
-    const averageScores = teams.map(team => team.average_score);
-    const teamSizes = teams.map(team => team.size);
+    const averageScores = teams.map((team) => team.average_score);
+    const teamSizes = teams.map((team) => team.size);
 
     // Calculate score statistics
     const meanScore = averageScores.reduce((sum, score) => sum + score, 0) / averageScores.length;
-    const scoreVariance = averageScores.reduce((sum, score) => sum + Math.pow(score - meanScore, 2), 0) / averageScores.length;
+    const scoreVariance =
+      averageScores.reduce((sum, score) => sum + Math.pow(score - meanScore, 2), 0) /
+      averageScores.length;
     const scoreStdDev = Math.sqrt(scoreVariance);
 
     const minScore = Math.min(...averageScores);
@@ -120,21 +104,24 @@ export class TeamBalancer {
       score_standard_deviation: scoreStdDev,
       score_range: {
         min: minScore,
-        max: maxScore
+        max: maxScore,
       },
       size_balance: {
         min_size: minSize,
         max_size: maxSize,
-        size_difference: maxSize - minSize
+        size_difference: maxSize - minSize,
       },
-      justification
+      justification,
     };
   }
 
   /**
    * Assess overall balance quality
    */
-  private static assessBalanceQuality(scoreStdDev: number, sizeDifference: number): 'excellent' | 'good' | 'fair' | 'poor' {
+  private static assessBalanceQuality(
+    scoreStdDev: number,
+    sizeDifference: number
+  ): 'excellent' | 'good' | 'fair' | 'poor' {
     if (scoreStdDev < 0.05 && sizeDifference === 0) {
       return 'excellent';
     } else if (scoreStdDev < 0.1 && sizeDifference <= 1) {
@@ -160,16 +147,16 @@ export class TeamBalancer {
     switch (quality) {
       case 'excellent':
         return `Teams are excellently balanced with ${stdDevPercent}% score deviation and equal sizes (${sizesStr}). Snake draft ensured optimal distribution.`;
-      
+
       case 'good':
         return `Teams are well-balanced with ${stdDevPercent}% score deviation and sizes (${sizesStr}). Minor differences are within acceptable limits.`;
-      
+
       case 'fair':
         return `Teams show fair balance with ${stdDevPercent}% score deviation. Team sizes (${sizesStr}) differ by at most 1 player as required.`;
-      
+
       case 'poor':
         return `Team balance could be improved. Score deviation is ${stdDevPercent}% with sizes (${sizesStr}). Consider different player distribution strategy.`;
-      
+
       default:
         return `Team balance assessment: ${stdDevPercent}% score deviation, sizes: ${sizesStr}`;
     }
@@ -182,7 +169,7 @@ export class TeamBalancer {
     teams: Team[],
     maxIterations: number = 100
   ): { optimized: Team[]; iterations: number; improvement: number } {
-    let currentTeams = teams.map(team => ({ ...team, players: [...team.players] }));
+    let currentTeams = teams.map((team) => ({ ...team, players: [...team.players] }));
     let currentBalance = MetricsCalculator.calculateTeamBalance(currentTeams);
     let bestTeams = currentTeams;
     let bestBalance = currentBalance;
@@ -190,17 +177,17 @@ export class TeamBalancer {
 
     for (let i = 0; i < maxIterations; i++) {
       iterations++;
-      
+
       // Try swapping players between teams
       const improved = this.attemptPlayerSwaps(currentTeams);
-      
+
       if (improved) {
         currentTeams = improved.teams;
         currentBalance = MetricsCalculator.calculateTeamBalance(currentTeams);
-        
+
         // Keep track of best solution
         if (currentBalance.balance_coefficient > bestBalance.balance_coefficient) {
-          bestTeams = currentTeams.map(team => ({ ...team, players: [...team.players] }));
+          bestTeams = currentTeams.map((team) => ({ ...team, players: [...team.players] }));
           bestBalance = currentBalance;
         }
       } else {
@@ -209,12 +196,17 @@ export class TeamBalancer {
       }
     }
 
-    const improvement = bestBalance.balance_coefficient - MetricsCalculator.calculateTeamBalance(teams).balance_coefficient;
+    const improvement =
+      bestBalance.balance_coefficient -
+      MetricsCalculator.calculateTeamBalance(teams).balance_coefficient;
 
     return {
-      optimized: bestTeams.map(team => this.calculateTeamStats(team)),
+      optimized: bestTeams.map((team) => {
+        const stats = MetricsCalculator.calculateTeamStats(team);
+        return { ...team, ...stats };
+      }),
       iterations,
-      improvement
+      improvement,
     };
   }
 
@@ -223,15 +215,16 @@ export class TeamBalancer {
    */
   private static attemptPlayerSwaps(teams: Team[]): { teams: Team[] } | null {
     const currentBalance = MetricsCalculator.calculateTeamBalance(teams).balance_coefficient;
-    
+
     for (let i = 0; i < teams.length; i++) {
       for (let j = i + 1; j < teams.length; j++) {
         // Try swapping each player from team i with each player from team j
         for (let pi = 0; pi < teams[i].players.length; pi++) {
           for (let pj = 0; pj < teams[j].players.length; pj++) {
             const testTeams = this.swapPlayers(teams, i, pi, j, pj);
-            const newBalance = MetricsCalculator.calculateTeamBalance(testTeams).balance_coefficient;
-            
+            const newBalance =
+              MetricsCalculator.calculateTeamBalance(testTeams).balance_coefficient;
+
             if (newBalance > currentBalance) {
               return { teams: testTeams };
             }
@@ -239,7 +232,7 @@ export class TeamBalancer {
         }
       }
     }
-    
+
     return null; // No improvement found
   }
 
@@ -253,14 +246,17 @@ export class TeamBalancer {
     teamB: number,
     playerB: number
   ): Team[] {
-    const newTeams = teams.map(team => ({ ...team, players: [...team.players] }));
-    
+    const newTeams = teams.map((team) => ({ ...team, players: [...team.players] }));
+
     const playerAData = newTeams[teamA].players[playerA];
     const playerBData = newTeams[teamB].players[playerB];
-    
+
     newTeams[teamA].players[playerA] = playerBData;
     newTeams[teamB].players[playerB] = playerAData;
-    
-    return newTeams.map(team => this.calculateTeamStats(team));
+
+    return newTeams.map((team) => {
+      const stats = MetricsCalculator.calculateTeamStats(team);
+      return { ...team, ...stats };
+    });
   }
 }

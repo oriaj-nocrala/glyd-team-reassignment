@@ -7,16 +7,16 @@ export const logger = {
       console.log(message, ...args);
     }
   },
-  
+
   warn: (message: string, ...args: unknown[]): void => {
     if (process.env.NODE_ENV !== 'test') {
       console.warn(message, ...args);
     }
   },
-  
+
   error: (message: string, ...args: unknown[]): void => {
     if (process.env.NODE_ENV !== 'test') {
       console.error(message, ...args);
     }
-  }
+  },
 };

@@ -33,12 +33,12 @@ export class DeterministicRandom {
    */
   shuffle<T>(array: T[]): T[] {
     const shuffled = [...array];
-    
+
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = this.randomInt(0, i);
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-    
+
     return shuffled;
   }
 
@@ -74,11 +74,11 @@ export class SeedManager {
     // Create deterministic seed from sorted player IDs
     const sortedIds = [...playerIds].sort((a, b) => a - b);
     let hash = 0;
-    
-    sortedIds.forEach(id => {
+
+    sortedIds.forEach((id) => {
       hash = ((hash << 5) - hash + id) & 0xffffffff;
     });
-    
+
     return Math.abs(hash);
   }
 
@@ -89,7 +89,7 @@ export class SeedManager {
     if (userSeed === undefined) {
       return dataSeed;
     }
-    
+
     // XOR combination for mixing seeds
     return (userSeed ^ dataSeed) >>> 0; // Ensure positive 32-bit integer
   }
@@ -111,15 +111,15 @@ export class SeedManager {
     if (!Number.isInteger(seed)) {
       return { isValid: false, message: 'Seed must be an integer' };
     }
-    
+
     if (seed < 0) {
       return { isValid: false, message: 'Seed must be non-negative' };
     }
-    
+
     if (seed > 2147483647) {
       return { isValid: false, message: 'Seed must be less than 2^31' };
     }
-    
+
     return { isValid: true };
   }
 }

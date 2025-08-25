@@ -4,10 +4,10 @@ This document provides a summary of the code audit performed on the Gyld Team Re
 
 ## Strengths
 
-*   **Project Structure:** The code is well-modularized, separating data handling, analysis, assignment, and output logic into distinct components. This makes the codebase easy to navigate, test, and maintain.
-*   **Robustness:** The project includes comprehensive data validation and cleaning (`validator.ts`), making the tool resilient to imperfect input data. Features like outlier removal show a sophisticated approach.
-*   **Testing:** The project has a solid test suite that covers the main functionality, ensuring reliability and correctness. All tests passed successfully during the audit.
-*   **Efficiency:** The use of Node.js streams for parsing CSV files is efficient and appropriate for handling potentially large datasets without consuming excessive memory.
+- **Project Structure:** The code is well-modularized, separating data handling, analysis, assignment, and output logic into distinct components. This makes the codebase easy to navigate, test, and maintain.
+- **Robustness:** The project includes comprehensive data validation and cleaning (`validator.ts`), making the tool resilient to imperfect input data. Features like outlier removal show a sophisticated approach.
+- **Testing:** The project has a solid test suite that covers the main functionality, ensuring reliability and correctness. All tests passed successfully during the audit.
+- **Efficiency:** The use of Node.js streams for parsing CSV files is efficient and appropriate for handling potentially large datasets without consuming excessive memory.
 
 ## Areas for Improvement
 

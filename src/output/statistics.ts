@@ -1,5 +1,6 @@
 import { AssignmentResult, Team, FairnessStats } from '../types';
 
+
 export class StatisticsGenerator {
   /**
    * Generate comprehensive team summaries
@@ -14,7 +15,7 @@ export class StatisticsGenerator {
     top_player: { id: number; score: number };
     bottom_player: { id: number; score: number };
   }[] {
-    return teams.map(team => this.analyzeTeam(team));
+    return teams.map((team) => this.analyzeTeam(team));
   }
 
   /**
@@ -39,21 +40,23 @@ export class StatisticsGenerator {
         score_std_dev: 0,
         score_range: { min: 0, max: 0 },
         top_player: { id: 0, score: 0 },
-        bottom_player: { id: 0, score: 0 }
+        bottom_player: { id: 0, score: 0 },
       };
     }
 
-    const scores = team.players.map(p => p.composite_score);
+    const scores = team.players.map((p) => p.composite_score);
     const sortedScores = [...scores].sort((a, b) => a - b);
-    
+
     // Calculate median
-    const median = sortedScores.length % 2 === 0
-      ? (sortedScores[sortedScores.length / 2 - 1] + sortedScores[sortedScores.length / 2]) / 2
-      : sortedScores[Math.floor(sortedScores.length / 2)];
+    const median =
+      sortedScores.length % 2 === 0
+        ? (sortedScores[sortedScores.length / 2 - 1] + sortedScores[sortedScores.length / 2]) / 2
+        : sortedScores[Math.floor(sortedScores.length / 2)];
 
     // Calculate standard deviation
     const mean = team.average_score;
-    const variance = scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / scores.length;
+    const variance =
+      scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / scores.length;
     const stdDev = Math.sqrt(variance);
 
     // Find top and bottom players
@@ -69,16 +72,16 @@ export class StatisticsGenerator {
       score_std_dev: stdDev,
       score_range: {
         min: Math.min(...scores),
-        max: Math.max(...scores)
+        max: Math.max(...scores),
       },
       top_player: {
         id: topPlayer.player_id,
-        score: topPlayer.composite_score
+        score: topPlayer.composite_score,
       },
       bottom_player: {
         id: bottomPlayer.player_id,
-        score: bottomPlayer.composite_score
-      }
+        score: bottomPlayer.composite_score,
+      },
     };
   }
 
@@ -94,12 +97,13 @@ export class StatisticsGenerator {
       throw new Error('No teams provided for fairness analysis');
     }
 
-    const teamAverages = teams.map(team => team.average_score);
-    const teamSizes = teams.map(team => team.size);
+    const teamAverages = teams.map((team) => team.average_score);
+    const teamSizes = teams.map((team) => team.size);
 
     // Basic statistics
     const mean = teamAverages.reduce((sum, avg) => sum + avg, 0) / teamAverages.length;
-    const variance = teamAverages.reduce((sum, avg) => sum + Math.pow(avg - mean, 2), 0) / teamAverages.length;
+    const variance =
+      teamAverages.reduce((sum, avg) => sum + Math.pow(avg - mean, 2), 0) / teamAverages.length;
     const stdDev = Math.sqrt(variance);
 
     // Coefficient of variation (relative variability)
@@ -112,24 +116,27 @@ export class StatisticsGenerator {
     const balanceScore = this.calculateBalanceScore(stdDev, coefficientOfVariation, teamSizes);
 
     // Generate justification
-    const balanceQuality = this.assessBalanceQuality(stdDev, Math.max(...teamSizes) - Math.min(...teamSizes));
+    const balanceQuality = this.assessBalanceQuality(
+      stdDev,
+      Math.max(...teamSizes) - Math.min(...teamSizes)
+    );
     const justification = this.generateJustification(balanceQuality, stdDev, teamSizes);
 
     return {
       score_standard_deviation: stdDev,
       score_range: {
         min: Math.min(...teamAverages),
-        max: Math.max(...teamAverages)
+        max: Math.max(...teamAverages),
       },
       size_balance: {
         min_size: Math.min(...teamSizes),
         max_size: Math.max(...teamSizes),
-        size_difference: Math.max(...teamSizes) - Math.min(...teamSizes)
+        size_difference: Math.max(...teamSizes) - Math.min(...teamSizes),
       },
       justification,
       coefficient_of_variation: coefficientOfVariation,
       gini_coefficient: giniCoefficient,
-      balance_score: balanceScore
+      balance_score: balanceScore,
     };
   }
 
@@ -138,18 +145,18 @@ export class StatisticsGenerator {
    */
   private static calculateGiniCoefficient(values: number[]): number {
     if (values.length === 0) return 0;
-    
+
     const sortedValues = [...values].sort((a, b) => a - b);
     const n = sortedValues.length;
     const sum = sortedValues.reduce((acc, val) => acc + val, 0);
-    
+
     if (sum === 0) return 0;
-    
+
     let gini = 0;
     for (let i = 0; i < n; i++) {
       gini += (2 * (i + 1) - n - 1) * sortedValues[i];
     }
-    
+
     return gini / (n * sum);
   }
 
@@ -158,20 +165,23 @@ export class StatisticsGenerator {
    */
   private static calculateBalanceScore(stdDev: number, cv: number, teamSizes: number[]): number {
     // Score components (each 0-1)
-    const scoreBalance = Math.max(0, 1 - (stdDev / 0.2)); // Penalize high std dev
-    const variationBalance = Math.max(0, 1 - (cv * 2)); // Penalize high coefficient of variation
+    const scoreBalance = Math.max(0, 1 - stdDev / 0.2); // Penalize high std dev
+    const variationBalance = Math.max(0, 1 - cv * 2); // Penalize high coefficient of variation
     const sizeBalance = Math.max(...teamSizes) - Math.min(...teamSizes) <= 1 ? 1 : 0; // Perfect if diff <= 1
-    
+
     // Weighted average
-    const overallBalance = (scoreBalance * 0.4 + variationBalance * 0.3 + sizeBalance * 0.3);
-    
+    const overallBalance = scoreBalance * 0.4 + variationBalance * 0.3 + sizeBalance * 0.3;
+
     return Math.round(overallBalance * 100);
   }
 
   /**
    * Assess balance quality level
    */
-  private static assessBalanceQuality(scoreStdDev: number, sizeDifference: number): 'excellent' | 'good' | 'fair' | 'poor' {
+  private static assessBalanceQuality(
+    scoreStdDev: number,
+    sizeDifference: number
+  ): 'excellent' | 'good' | 'fair' | 'poor' {
     if (scoreStdDev < 0.05 && sizeDifference === 0) {
       return 'excellent';
     } else if (scoreStdDev < 0.1 && sizeDifference <= 1) {
@@ -197,16 +207,16 @@ export class StatisticsGenerator {
     switch (quality) {
       case 'excellent':
         return `Teams are excellently balanced with ${stdDevPercent}% score deviation and equal sizes (${sizesStr}). Snake draft ensured optimal distribution.`;
-      
+
       case 'good':
         return `Teams are well-balanced with ${stdDevPercent}% score deviation and sizes (${sizesStr}). Minor differences are within acceptable limits.`;
-      
+
       case 'fair':
         return `Teams show fair balance with ${stdDevPercent}% score deviation. Team sizes (${sizesStr}) differ by at most 1 player as required.`;
-      
+
       case 'poor':
         return `Team balance could be improved. Score deviation is ${stdDevPercent}% with sizes (${sizesStr}). Consider different distribution strategy.`;
-      
+
       default:
         return `Team balance assessment: ${stdDevPercent}% score deviation, sizes: ${sizesStr}`;
     }
@@ -224,16 +234,16 @@ export class StatisticsGenerator {
     const moves: { player_id: number; score: number; from: string; to: number }[] = [];
     const movementsByTeam: Map<string, Map<number, number>> = new Map();
 
-    result.teams.forEach(team => {
-      team.players.forEach(player => {
+    result.teams.forEach((team) => {
+      team.players.forEach((player) => {
         if (player.current_team_id !== team.team_id) {
           const fromTeam = player.current_team_name || `Team ${player.current_team_id}`;
-          
+
           moves.push({
             player_id: player.player_id,
             score: player.composite_score,
             from: fromTeam,
-            to: team.team_id
+            to: team.team_id,
           });
 
           // Track movements by team
@@ -255,15 +265,13 @@ export class StatisticsGenerator {
     });
 
     // Get top movers (highest scoring players who moved)
-    const topMovers = moves
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10);
+    const topMovers = moves.sort((a, b) => b.score - a.score).slice(0, 10);
 
     return {
       total_moves: moves.length,
       movement_rate: (moves.length / result.total_players) * 100,
       moves_by_team: movesByTeam.sort((a, b) => b.count - a.count),
-      top_movers: topMovers
+      top_movers: topMovers,
     };
   }
 
@@ -285,8 +293,8 @@ export class StatisticsGenerator {
     }[];
   } {
     // Collect all scores
-    const allScores = result.teams.flatMap(team => 
-      team.players.map(player => player.composite_score)
+    const allScores = result.teams.flatMap((team) =>
+      team.players.map((player) => player.composite_score)
     );
 
     if (allScores.length === 0) {
@@ -297,12 +305,14 @@ export class StatisticsGenerator {
 
     // Overall statistics
     const mean = allScores.reduce((sum, score) => sum + score, 0) / allScores.length;
-    const variance = allScores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / allScores.length;
+    const variance =
+      allScores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / allScores.length;
     const stdDev = Math.sqrt(variance);
 
-    const median = sortedScores.length % 2 === 0
-      ? (sortedScores[sortedScores.length / 2 - 1] + sortedScores[sortedScores.length / 2]) / 2
-      : sortedScores[Math.floor(sortedScores.length / 2)];
+    const median =
+      sortedScores.length % 2 === 0
+        ? (sortedScores[sortedScores.length / 2 - 1] + sortedScores[sortedScores.length / 2]) / 2
+        : sortedScores[Math.floor(sortedScores.length / 2)];
 
     // Quartiles
     const q1Index = Math.floor(sortedScores.length * 0.25);
@@ -310,13 +320,13 @@ export class StatisticsGenerator {
     const quartiles = {
       q1: sortedScores[q1Index],
       q2: median,
-      q3: sortedScores[q3Index]
+      q3: sortedScores[q3Index],
     };
 
     // Team distributions
-    const teamDistributions = result.teams.map(team => ({
+    const teamDistributions = result.teams.map((team) => ({
       team_id: team.team_id,
-      score_histogram: this.createScoreHistogram(team.players.map(p => p.composite_score))
+      score_histogram: this.createScoreHistogram(team.players.map((p) => p.composite_score)),
     }));
 
     return {
@@ -326,16 +336,19 @@ export class StatisticsGenerator {
         std_dev: stdDev,
         min: Math.min(...allScores),
         max: Math.max(...allScores),
-        quartiles
+        quartiles,
       },
-      team_distributions: teamDistributions
+      team_distributions: teamDistributions,
     };
   }
 
   /**
    * Create score histogram for visualization
    */
-  private static createScoreHistogram(scores: number[], bins: number = 5): { range: string; count: number }[] {
+  private static createScoreHistogram(
+    scores: number[],
+    bins: number = 5
+  ): { range: string; count: number }[] {
     if (scores.length === 0) {
       return [];
     }
@@ -349,14 +362,14 @@ export class StatisticsGenerator {
     for (let i = 0; i < bins; i++) {
       const rangeStart = min + i * binWidth;
       const rangeEnd = i === bins - 1 ? max : min + (i + 1) * binWidth;
-      
-      const count = scores.filter(score => 
-        score >= rangeStart && (i === bins - 1 ? score <= rangeEnd : score < rangeEnd)
+
+      const count = scores.filter(
+        (score) => score >= rangeStart && (i === bins - 1 ? score <= rangeEnd : score < rangeEnd)
       ).length;
 
       histogram.push({
         range: `${rangeStart.toFixed(3)}-${rangeEnd.toFixed(3)}`,
-        count
+        count,
       });
     }
 

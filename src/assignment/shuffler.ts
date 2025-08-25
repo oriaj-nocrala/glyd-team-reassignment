@@ -4,9 +4,11 @@ import { TeamBalancer } from '../analysis/balancer';
 import { DeterministicRandom, SeedManager } from './deterministic';
 import { logger } from '../utils/logger';
 
+
 export class TeamShuffler {
+  private static readonly SCORE_GROUPING_THRESHOLD = 0.01; // 1% threshold
   private rng!: DeterministicRandom;
-  
+
   constructor(private seed?: number) {
     // Will be initialized in assignTeams when we have player data
   }
@@ -24,7 +26,7 @@ export class TeamShuffler {
     }
 
     // Initialize deterministic random with combined seed
-    const dataSeed = SeedManager.generateDataSeed(players.map(p => p.player_id));
+    const dataSeed = SeedManager.generateDataSeed(players.map((p) => p.player_id));
     const finalSeed = SeedManager.combineSeed(this.seed, dataSeed);
     this.rng = new DeterministicRandom(finalSeed);
 
@@ -40,7 +42,9 @@ export class TeamShuffler {
     if (optimizeBalance) {
       const optimization = TeamBalancer.optimizeTeamBalance(teams);
       teams = optimization.optimized;
-      logger.log(`Balance optimization: ${optimization.iterations} iterations, ${(optimization.improvement * 100).toFixed(2)}% improvement`);
+      logger.log(
+        `Balance optimization: ${optimization.iterations} iterations, ${(optimization.improvement * 100).toFixed(2)}% improvement`
+      );
     }
 
     // Calculate fairness statistics
@@ -51,7 +55,7 @@ export class TeamShuffler {
       total_players: players.length,
       target_teams: targetTeams,
       seed: finalSeed,
-      fairness_stats: fairnessStats
+      fairness_stats: fairnessStats,
     };
   }
 
@@ -64,7 +68,7 @@ export class TeamShuffler {
   ): Team[] {
     // Add some randomization to break ties while maintaining determinism
     const shuffledPlayers = this.deterministicPreShuffle(playersWithScores);
-    
+
     // Use snake draft for balanced distribution
     return TeamBalancer.createBalancedTeams(shuffledPlayers, targetTeams);
   }
@@ -74,12 +78,10 @@ export class TeamShuffler {
    */
   private deterministicPreShuffle(players: PlayerWithScore[]): PlayerWithScore[] {
     // Group players by similar scores (within small threshold)
-    const scoreGroups = this.groupPlayersByScore(players, 0.01); // 1% threshold
-    
+    const scoreGroups = this.groupPlayersByScore(players, TeamShuffler.SCORE_GROUPING_THRESHOLD);
+
     // Shuffle within each score group to break ties
-    const shuffledGroups = scoreGroups.map(group => 
-      this.rng.shuffle(group)
-    );
+    const shuffledGroups = scoreGroups.map((group) => this.rng.shuffle(group));
 
     // Flatten back to single array
     return shuffledGroups.flat();
@@ -98,7 +100,7 @@ export class TeamShuffler {
         currentGroup = [player];
       } else {
         const scoreDiff = Math.abs(currentGroup[0].composite_score - player.composite_score);
-        
+
         if (scoreDiff <= threshold) {
           currentGroup.push(player);
         } else {
@@ -121,7 +123,7 @@ export class TeamShuffler {
    */
   roundRobinAssignment(playersWithScores: PlayerWithScore[], targetTeams: number): Team[] {
     const rankedPlayers = MetricsCalculator.rankPlayersByScore(playersWithScores);
-    
+
     // Initialize teams
     const teams: Team[] = [];
     for (let i = 0; i < targetTeams; i++) {
@@ -130,7 +132,7 @@ export class TeamShuffler {
         players: [],
         total_score: 0,
         average_score: 0,
-        size: 0
+        size: 0,
       });
     }
 
@@ -141,25 +143,10 @@ export class TeamShuffler {
     });
 
     // Calculate team statistics
-    return teams.map(team => this.calculateTeamStats(team));
-  }
-
-  /**
-   * Calculate team statistics
-   */
-  private calculateTeamStats(team: Team): Team {
-    if (team.players.length === 0) {
-      return { ...team, total_score: 0, average_score: 0, size: 0 };
-    }
-
-    const total = team.players.reduce((sum, player) => sum + player.composite_score, 0);
-    
-    return {
-      ...team,
-      total_score: total,
-      average_score: total / team.players.length,
-      size: team.players.length
-    };
+    return teams.map((team) => {
+      const stats = MetricsCalculator.calculateTeamStats(team);
+      return { ...team, ...stats };
+    });
   }
 
   /**
@@ -167,20 +154,20 @@ export class TeamShuffler {
    */
   static generateAssignmentSummary(result: AssignmentResult): string {
     const { teams, total_players, target_teams, fairness_stats } = result;
-    
+
     let summary = `\n=== TEAM ASSIGNMENT SUMMARY ===\n`;
     summary += `Total Players: ${total_players}\n`;
     summary += `Target Teams: ${target_teams}\n`;
     summary += `Seed: ${result.seed}\n\n`;
 
-    teams.forEach(team => {
+    teams.forEach((team) => {
       summary += `Team ${team.team_id}: ${team.size} players, Avg Score: ${team.average_score.toFixed(3)}\n`;
     });
 
     summary += `\nFairness Statistics:\n`;
     summary += `- Score Standard Deviation: ${fairness_stats.score_standard_deviation.toFixed(4)}\n`;
     summary += `- Score Range: ${fairness_stats.score_range.min.toFixed(3)} - ${fairness_stats.score_range.max.toFixed(3)}\n`;
-    summary += `- Team Sizes: ${teams.map(t => t.size).join(', ')}\n`;
+    summary += `- Team Sizes: ${teams.map((t) => t.size).join(', ')}\n`;
     summary += `- Size Difference: ${fairness_stats.size_balance.size_difference}\n\n`;
     summary += `Justification: ${fairness_stats.justification}\n`;
 
@@ -190,29 +177,29 @@ export class TeamShuffler {
   /**
    * Export team assignments for external use
    */
-  static exportAssignments(result: AssignmentResult): { 
-    player_id: number; 
-    new_team_id: number; 
+  static exportAssignments(result: AssignmentResult): {
+    player_id: number;
+    new_team_id: number;
     composite_score: number;
     old_team_id: number;
     old_team_name: string;
   }[] {
-    const assignments: { 
-      player_id: number; 
-      new_team_id: number; 
+    const assignments: {
+      player_id: number;
+      new_team_id: number;
       composite_score: number;
       old_team_id: number;
       old_team_name: string;
     }[] = [];
 
-    result.teams.forEach(team => {
-      team.players.forEach(player => {
+    result.teams.forEach((team) => {
+      team.players.forEach((player) => {
         assignments.push({
           player_id: player.player_id,
           new_team_id: team.team_id,
           composite_score: player.composite_score,
           old_team_id: player.current_team_id,
-          old_team_name: player.current_team_name
+          old_team_name: player.current_team_name,
         });
       });
     });

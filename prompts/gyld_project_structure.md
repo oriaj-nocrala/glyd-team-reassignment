@@ -54,18 +54,21 @@ gyld-team-reassignment/
 ## 📋 Descripción de Archivos Clave
 
 ### 🚀 **src/index.ts**
+
 ```typescript
 // Entry point - CLI argument parsing y orchestration
 // Maneja --teams, --seed, ejecuta pipeline completo
 ```
 
 ### 📊 **src/types.ts**
+
 ```typescript
 // Interfaces centralizadas:
 // Player, Team, AssignmentResult, BalanceMetrics, etc.
 ```
 
 ### 📈 **src/analysis/metrics.ts**
+
 ```typescript
 // Funciones para calcular player scores:
 // - normalizeEngagement()
@@ -74,6 +77,7 @@ gyld-team-reassignment/
 ```
 
 ### ⚖️ **src/analysis/balancer.ts**
+
 ```typescript
 // Lógica de balanceo:
 // - validateTeamSizes()
@@ -82,6 +86,7 @@ gyld-team-reassignment/
 ```
 
 ### 🔀 **src/assignment/shuffler.ts**
+
 ```typescript
 // Core algorithm:
 // - snakeDraftAssignment()
@@ -90,6 +95,7 @@ gyld-team-reassignment/
 ```
 
 ### 📄 **src/output/statistics.ts**
+
 ```typescript
 // Team summaries y fairness metrics:
 // - generateTeamSummary()
@@ -114,21 +120,25 @@ gyld-team-reassignment/
 ## 🎯 Ventajas de esta Estructura
 
 ### ✅ **Modularidad**
+
 - Cada responsabilidad en su propio módulo
 - Fácil testing unitario
 - Reutilización de componentes
 
 ### ✅ **Escalabilidad**
+
 - Fácil agregar nuevos algoritmos de balanceo
 - Extensible para Level B data si se necesita
 - Separación clara de concerns
 
 ### ✅ **Mantenibilidad**
+
 - Tipos centralizados en un lugar
 - Lógica de negocio separada de I/O
 - Easy debugging por módulo
 
 ### ✅ **Testing**
+
 - Unit tests por componente
 - Integration tests end-to-end
 - Mocking fácil de data layer
@@ -136,7 +146,7 @@ gyld-team-reassignment/
 ## 🚦 Flujo de Ejecución
 
 ```
-CLI Input → Data Parser → Metrics Calculator → 
+CLI Input → Data Parser → Metrics Calculator →
 Assignment Algorithm → Output Formatter → Console/Files
 ```
 

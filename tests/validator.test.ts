@@ -1,39 +1,27 @@
 import { DataValidator } from '../src/data/validator';
+import { InvalidTeamConstraintsError } from '../src/errors';
 
 describe('DataValidator', () => {
   describe('validateTeamConstraints', () => {
-    it('should validate valid team configurations', () => {
-      const result = DataValidator.validateTeamConstraints(12, 3);
-      expect(result.isValid).toBe(true);
-      expect(result.message).toBeUndefined();
+    it('should not throw for valid team configurations', () => {
+      expect(() => DataValidator.validateTeamConstraints(12, 3)).not.toThrow();
     });
 
-    it('should reject too few teams', () => {
-      const result = DataValidator.validateTeamConstraints(10, 1);
-      expect(result.isValid).toBe(false);
-      expect(result.message).toContain('at least 2');
+    it('should throw for too few teams', () => {
+      expect(() => DataValidator.validateTeamConstraints(10, 1)).toThrow(InvalidTeamConstraintsError);
     });
 
-    it('should reject more teams than players', () => {
-      const result = DataValidator.validateTeamConstraints(5, 10);
-      expect(result.isValid).toBe(false);
-      expect(result.message).toContain('Cannot create 10 teams with only 5 players');
+    it('should throw for more teams than players', () => {
+      expect(() => DataValidator.validateTeamConstraints(5, 10)).toThrow(InvalidTeamConstraintsError);
     });
 
-    it('should reject configurations with too few players per team', () => {
-      const result = DataValidator.validateTeamConstraints(8, 5);
-      expect(result.isValid).toBe(false);
-      expect(result.message).toContain('Too few players');
+    it('should throw for configurations with too few players per team', () => {
+      expect(() => DataValidator.validateTeamConstraints(8, 5)).toThrow(InvalidTeamConstraintsError);
     });
 
-    it('should validate edge cases', () => {
-      // Minimum viable: 4 players, 2 teams = 2 players each
-      const result1 = DataValidator.validateTeamConstraints(4, 2);
-      expect(result1.isValid).toBe(true);
-
-      // 7 players, 3 teams = 3,2,2 (difference of 1, valid)
-      const result2 = DataValidator.validateTeamConstraints(7, 3);
-      expect(result2.isValid).toBe(true);
+    it('should not throw for edge cases', () => {
+      expect(() => DataValidator.validateTeamConstraints(4, 2)).not.toThrow();
+      expect(() => DataValidator.validateTeamConstraints(7, 3)).not.toThrow();
     });
   });
 
@@ -58,18 +46,18 @@ describe('DataValidator', () => {
 
     it('should maintain max difference of 1', () => {
       const testCases = [
-        [7, 3],   // 3, 2, 2
-        [8, 3],   // 3, 3, 2  
-        [11, 4],  // 3, 3, 3, 2
-        [17, 5],  // 4, 3, 3, 3, 4
-        [100, 7]  // Should be balanced
+        [7, 3], // 3, 2, 2
+        [8, 3], // 3, 3, 2
+        [11, 4], // 3, 3, 3, 2
+        [17, 5], // 4, 3, 3, 3, 4
+        [100, 7], // Should be balanced
       ];
 
       testCases.forEach(([totalPlayers, targetTeams]) => {
         const sizes = DataValidator.calculateExpectedTeamSizes(totalPlayers, targetTeams);
         const minSize = Math.min(...sizes);
         const maxSize = Math.max(...sizes);
-        
+
         expect(maxSize - minSize).toBeLessThanOrEqual(1);
         expect(sizes.reduce((sum, size) => sum + size, 0)).toBe(totalPlayers);
       });
@@ -78,11 +66,7 @@ describe('DataValidator', () => {
 
   describe('checkDuplicateIds', () => {
     it('should detect no duplicates in clean data', () => {
-      const players = [
-        { player_id: 1 } as any,
-        { player_id: 2 } as any,
-        { player_id: 3 } as any
-      ];
+      const players = [{ player_id: 1 } as any, { player_id: 2 } as any, { player_id: 3 } as any];
 
       const result = DataValidator.checkDuplicateIds(players);
       expect(result.hasDuplicates).toBe(false);
@@ -95,7 +79,7 @@ describe('DataValidator', () => {
         { player_id: 2 } as any,
         { player_id: 1 } as any,
         { player_id: 3 } as any,
-        { player_id: 2 } as any
+        { player_id: 2 } as any,
       ];
 
       const result = DataValidator.checkDuplicateIds(players);
@@ -112,23 +96,25 @@ describe('DataValidator', () => {
 
   describe('cleanPlayerData', () => {
     it('should ensure non-negative values', () => {
-      const dirtyPlayers = [{
-        player_id: 1,
-        historical_events_participated: -5,
-        historical_event_engagements: -10,
-        historical_points_earned: -100,
-        historical_points_spent: 200,
-        historical_messages_sent: -50,
-        current_total_points: -75,
-        days_active_last_30: -5,
-        current_streak_value: -2,
-        last_active_ts: '2025-08-01',
-        current_team_id: 1,
-        current_team_name: 'Team_1'
-      }];
+      const dirtyPlayers = [
+        {
+          player_id: 1,
+          historical_events_participated: -5,
+          historical_event_engagements: -10,
+          historical_points_earned: -100,
+          historical_points_spent: 200,
+          historical_messages_sent: -50,
+          current_total_points: -75,
+          days_active_last_30: -5,
+          current_streak_value: -2,
+          last_active_ts: '2025-08-01',
+          current_team_id: 1,
+          current_team_name: 'Team_1',
+        },
+      ];
 
       const cleaned = DataValidator.cleanPlayerData(dirtyPlayers);
-      
+
       expect(cleaned[0].historical_events_participated).toBe(0);
       expect(cleaned[0].historical_event_engagements).toBe(0);
       expect(cleaned[0].historical_points_earned).toBe(0);
@@ -140,40 +126,44 @@ describe('DataValidator', () => {
     });
 
     it('should cap days_active_last_30 at 30', () => {
-      const players = [{
-        player_id: 1,
-        days_active_last_30: 35,
-        historical_events_participated: 10,
-        historical_event_engagements: 50,
-        historical_points_earned: 1000,
-        historical_points_spent: 500,
-        historical_messages_sent: 100,
-        current_total_points: 500,
-        current_streak_value: 5,
-        last_active_ts: '2025-08-01',
-        current_team_id: 1,
-        current_team_name: 'Team_1'
-      }];
+      const players = [
+        {
+          player_id: 1,
+          days_active_last_30: 35,
+          historical_events_participated: 10,
+          historical_event_engagements: 50,
+          historical_points_earned: 1000,
+          historical_points_spent: 500,
+          historical_messages_sent: 100,
+          current_total_points: 500,
+          current_streak_value: 5,
+          last_active_ts: '2025-08-01',
+          current_team_id: 1,
+          current_team_name: 'Team_1',
+        },
+      ];
 
       const cleaned = DataValidator.cleanPlayerData(players);
       expect(cleaned[0].days_active_last_30).toBe(30);
     });
 
     it('should preserve valid values', () => {
-      const players = [{
-        player_id: 1,
-        historical_events_participated: 10,
-        historical_event_engagements: 50,
-        historical_points_earned: 1000,
-        historical_points_spent: 500,
-        historical_messages_sent: 100,
-        current_total_points: 500,
-        days_active_last_30: 15,
-        current_streak_value: 5,
-        last_active_ts: '2025-08-01',
-        current_team_id: 1,
-        current_team_name: 'Team_1'
-      }];
+      const players = [
+        {
+          player_id: 1,
+          historical_events_participated: 10,
+          historical_event_engagements: 50,
+          historical_points_earned: 1000,
+          historical_points_spent: 500,
+          historical_messages_sent: 100,
+          current_total_points: 500,
+          days_active_last_30: 15,
+          current_streak_value: 5,
+          last_active_ts: '2025-08-01',
+          current_team_id: 1,
+          current_team_name: 'Team_1',
+        },
+      ];
 
       const cleaned = DataValidator.cleanPlayerData(players);
       expect(cleaned[0]).toEqual(players[0]);

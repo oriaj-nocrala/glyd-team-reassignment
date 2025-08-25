@@ -15,7 +15,7 @@ describe('MetricsCalculator', () => {
       current_streak_value: 5,
       last_active_ts: '2025-08-01',
       current_team_id: 1,
-      current_team_name: 'Team_1'
+      current_team_name: 'Team_1',
     },
     {
       player_id: 2,
@@ -29,7 +29,7 @@ describe('MetricsCalculator', () => {
       current_streak_value: 2,
       last_active_ts: '2025-08-01',
       current_team_id: 1,
-      current_team_name: 'Team_1'
+      current_team_name: 'Team_1',
     },
     {
       player_id: 3,
@@ -43,17 +43,17 @@ describe('MetricsCalculator', () => {
       current_streak_value: 10,
       last_active_ts: '2025-08-01',
       current_team_id: 2,
-      current_team_name: 'Team_2'
-    }
+      current_team_name: 'Team_2',
+    },
   ];
 
   describe('calculatePlayerScores', () => {
     it('should calculate composite scores for all players', () => {
       const playersWithScores = MetricsCalculator.calculatePlayerScores(samplePlayers);
-      
+
       expect(playersWithScores).toHaveLength(3);
-      
-      playersWithScores.forEach(player => {
+
+      playersWithScores.forEach((player) => {
         expect(player).toHaveProperty('composite_score');
         expect(typeof player.composite_score).toBe('number');
         expect(player.composite_score).toBeGreaterThanOrEqual(0);
@@ -63,12 +63,12 @@ describe('MetricsCalculator', () => {
 
     it('should assign higher scores to more engaged players', () => {
       const playersWithScores = MetricsCalculator.calculatePlayerScores(samplePlayers);
-      
+
       // Player 3 has highest engagement metrics, should have highest score
-      const player3Score = playersWithScores.find(p => p.player_id === 3)?.composite_score;
-      const player1Score = playersWithScores.find(p => p.player_id === 1)?.composite_score;
-      const player2Score = playersWithScores.find(p => p.player_id === 2)?.composite_score;
-      
+      const player3Score = playersWithScores.find((p) => p.player_id === 3)?.composite_score;
+      const player1Score = playersWithScores.find((p) => p.player_id === 1)?.composite_score;
+      const player2Score = playersWithScores.find((p) => p.player_id === 2)?.composite_score;
+
       expect(player3Score).toBeGreaterThan(player1Score!);
       expect(player1Score).toBeGreaterThan(player2Score!);
     });
@@ -83,7 +83,7 @@ describe('MetricsCalculator', () => {
     it('should rank players by composite score descending', () => {
       const playersWithScores = MetricsCalculator.calculatePlayerScores(samplePlayers);
       const ranked = MetricsCalculator.rankPlayersByScore(playersWithScores);
-      
+
       for (let i = 0; i < ranked.length - 1; i++) {
         expect(ranked[i].composite_score).toBeGreaterThanOrEqual(ranked[i + 1].composite_score);
       }
@@ -94,12 +94,12 @@ describe('MetricsCalculator', () => {
       const identicalPlayers = [
         { ...samplePlayers[0], player_id: 5 },
         { ...samplePlayers[0], player_id: 3 },
-        { ...samplePlayers[0], player_id: 7 }
+        { ...samplePlayers[0], player_id: 7 },
       ];
-      
+
       const playersWithScores = MetricsCalculator.calculatePlayerScores(identicalPlayers);
       const ranked = MetricsCalculator.rankPlayersByScore(playersWithScores);
-      
+
       // Should be ordered by player_id: 3, 5, 7
       expect(ranked[0].player_id).toBe(3);
       expect(ranked[1].player_id).toBe(5);
@@ -110,24 +110,49 @@ describe('MetricsCalculator', () => {
   describe('calculateTeamBalance', () => {
     it('should calculate balance metrics for teams', () => {
       const playersWithScores = MetricsCalculator.calculatePlayerScores(samplePlayers);
-      
+
       const teams = [
         { players: [playersWithScores[0], playersWithScores[1]] },
-        { players: [playersWithScores[2]] }
+        { players: [playersWithScores[2]] },
       ];
-      
+
       const balance = MetricsCalculator.calculateTeamBalance(teams);
-      
+
       expect(balance).toHaveProperty('mean_scores');
       expect(balance).toHaveProperty('score_variance');
       expect(balance).toHaveProperty('balance_coefficient');
-      
+
       expect(balance.mean_scores).toHaveLength(2);
       expect(typeof balance.score_variance).toBe('number');
       expect(typeof balance.balance_coefficient).toBe('number');
-      
+
       expect(balance.balance_coefficient).toBeGreaterThanOrEqual(0);
       expect(balance.balance_coefficient).toBeLessThanOrEqual(1);
+    });
+  });
+
+  describe('calculateTeamStats', () => {
+    it('should calculate stats for a single team', () => {
+      const playersWithScores = MetricsCalculator.calculatePlayerScores(samplePlayers);
+      const team = { players: playersWithScores };
+
+      const stats = MetricsCalculator.calculateTeamStats(team);
+
+      const expectedTotalScore = playersWithScores.reduce((sum, p) => sum + p.composite_score, 0);
+      const expectedAverageScore = expectedTotalScore / playersWithScores.length;
+
+      expect(stats.size).toBe(playersWithScores.length);
+      expect(stats.total_score).toBeCloseTo(expectedTotalScore);
+      expect(stats.average_score).toBeCloseTo(expectedAverageScore);
+    });
+
+    it('should handle empty team', () => {
+      const team = { players: [] };
+      const stats = MetricsCalculator.calculateTeamStats(team);
+
+      expect(stats.size).toBe(0);
+      expect(stats.total_score).toBe(0);
+      expect(stats.average_score).toBe(0);
     });
   });
 });

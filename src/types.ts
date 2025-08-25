@@ -103,13 +103,13 @@ export interface EnhancedPlayer extends Player {
   high_value_events_ratio: number;
   engagement_consistency: number;
   recent_event_activity: number;
-  
+
   // Communication quality metrics
   message_engagement_ratio: number;
   conversation_participation: number;
   message_length_avg: number;
   reply_engagement_rate: number;
-  
+
   // Spending behavior metrics
   spending_efficiency: number;
   consumable_usage_rate: number;
