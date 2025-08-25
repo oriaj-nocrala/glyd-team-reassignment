@@ -1,5 +1,7 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import csv from 'csv-parser';
+import * as XLSX from 'xlsx';
 import { injectable } from 'tsyringe';
 import { InvalidCsvError } from '../errors';
 import {
@@ -14,6 +16,157 @@ import { logger } from '../utils/logger';
 
 @injectable()
 export class LevelBDataParser {
+  /**
+   * Parse events file (CSV or Excel) and return array of events
+   */
+  async parseEventsFromFile(filePath: string): Promise<EventRecord[]> {
+    const extension = path.extname(filePath).toLowerCase();
+    return extension === '.xlsx' ? this.parseEventsFromExcel(filePath) : this.parseEventsFromCSV(filePath);
+  }
+
+  /**
+   * Parse messages file (CSV or Excel) and return array of messages
+   */
+  async parseMessagesFromFile(filePath: string): Promise<MessageRecord[]> {
+    const extension = path.extname(filePath).toLowerCase();
+    return extension === '.xlsx' ? this.parseMessagesFromExcel(filePath) : this.parseMessagesFromCSV(filePath);
+  }
+
+  /**
+   * Parse spend file (CSV or Excel) and return array of spend records
+   */
+  async parseSpendFromFile(filePath: string): Promise<SpendRecord[]> {
+    const extension = path.extname(filePath).toLowerCase();
+    return extension === '.xlsx' ? this.parseSpendFromExcel(filePath) : this.parseSpendFromCSV(filePath);
+  }
+
+  /**
+   * Parse events Excel file
+   */
+  async parseEventsFromExcel(filePath: string): Promise<EventRecord[]> {
+    try {
+      const workbook = XLSX.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData: EventCSVRow[] = XLSX.utils.sheet_to_json(worksheet);
+      
+      const events: EventRecord[] = [];
+      const invalidRows: { row: EventCSVRow; error: Error }[] = [];
+      
+      jsonData.forEach((row) => {
+        try {
+          const event: EventRecord = {
+            id: parseInt(row.id),
+            player_id: parseInt(row.player_id),
+            ts: parseInt(row.ts),
+            event_id: parseInt(row.event_id),
+            event_instance_id: parseInt(row.event_instance_id),
+            engagement_kind: row.engagement_kind,
+            points_used: parseInt(row.points_used) || 0,
+          };
+          events.push(event);
+        } catch (error) {
+          invalidRows.push({ row, error: error as Error });
+        }
+      });
+      
+      if (invalidRows.length > 0) {
+        throw new InvalidCsvError(`Failed to parse ${invalidRows.length} event rows from Excel`, invalidRows);
+      }
+      
+      logger.log(`Successfully parsed ${events.length} events from Excel`);
+      return events;
+    } catch (error) {
+      if (error instanceof InvalidCsvError) throw error;
+      throw new Error(`Failed to parse Excel events: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Parse messages Excel file
+   */
+  async parseMessagesFromExcel(filePath: string): Promise<MessageRecord[]> {
+    try {
+      const workbook = XLSX.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData: MessageCSVRow[] = XLSX.utils.sheet_to_json(worksheet);
+      
+      const messages: MessageRecord[] = [];
+      const invalidRows: { row: MessageCSVRow; error: Error }[] = [];
+      
+      jsonData.forEach((row) => {
+        try {
+          const message: MessageRecord = {
+            id: parseInt(row.id),
+            player_id: parseInt(row.player_id),
+            ts: parseInt(row.ts),
+            text_length: parseInt(row.text_length),
+            is_message_reply: row.is_message_reply === 'true' || row.is_message_reply === '1',
+            message_reply_to_id: row.message_reply_to_id ? parseInt(row.message_reply_to_id) : undefined,
+          };
+          messages.push(message);
+        } catch (error) {
+          invalidRows.push({ row, error: error as Error });
+        }
+      });
+      
+      if (invalidRows.length > 0) {
+        throw new InvalidCsvError(`Failed to parse ${invalidRows.length} message rows from Excel`, invalidRows);
+      }
+      
+      logger.log(`Successfully parsed ${messages.length} messages from Excel`);
+      return messages;
+    } catch (error) {
+      if (error instanceof InvalidCsvError) throw error;
+      throw new Error(`Failed to parse Excel messages: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Parse spend Excel file
+   */
+  async parseSpendFromExcel(filePath: string): Promise<SpendRecord[]> {
+    try {
+      const workbook = XLSX.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData: SpendCSVRow[] = XLSX.utils.sheet_to_json(worksheet);
+      
+      const spends: SpendRecord[] = [];
+      const invalidRows: { row: SpendCSVRow; error: Error }[] = [];
+      
+      jsonData.forEach((row) => {
+        try {
+          const spend: SpendRecord = {
+            id: parseInt(row.id),
+            player_id: parseInt(row.player_id),
+            ts: parseInt(row.ts),
+            item_id: parseInt(row.item_id),
+            item_category: row.item_category,
+            points_spent: parseInt(row.points_spent) || 0,
+            is_consumable: row.is_consumable === 'true' || row.is_consumable === '1',
+            is_consumed: row.is_consumed === 'true' || row.is_consumed === '1',
+            consumed_ts: row.consumed_ts ? parseInt(row.consumed_ts) : undefined,
+          };
+          spends.push(spend);
+        } catch (error) {
+          invalidRows.push({ row, error: error as Error });
+        }
+      });
+      
+      if (invalidRows.length > 0) {
+        throw new InvalidCsvError(`Failed to parse ${invalidRows.length} spend rows from Excel`, invalidRows);
+      }
+      
+      logger.log(`Successfully parsed ${spends.length} spend records from Excel`);
+      return spends;
+    } catch (error) {
+      if (error instanceof InvalidCsvError) throw error;
+      throw new Error(`Failed to parse Excel spends: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
   /**
    * Parse events CSV file
    */
@@ -167,9 +320,9 @@ export class LevelBDataParser {
     logger.log('🔄 Loading Level B raw data...');
 
     const [events, messages, spends] = await Promise.all([
-      this.parseEventsFromCSV(paths?.events || 'data/level_b_events.csv'),
-      this.parseMessagesFromCSV(paths?.messages || 'data/level_b_messages.csv'),
-      this.parseSpendFromCSV(paths?.spends || 'data/level_b_spend.csv'),
+      this.parseEventsFromFile(paths?.events || 'data/level_b_events.csv'),
+      this.parseMessagesFromFile(paths?.messages || 'data/level_b_messages.csv'),
+      this.parseSpendFromFile(paths?.spends || 'data/level_b_spend.csv'),
     ]);
 
     logger.log(`📊 Level B Data Summary:`);

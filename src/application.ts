@@ -70,7 +70,7 @@ export class Application {
       console.log(`📂 Reading player data from: ${inputPath}`);
     }
 
-    const players = await this.dataParser.parsePlayersFromCSV(inputPath);
+    const players = await this.dataParser.parsePlayersFromFile(inputPath);
 
     if (verbose) {
       console.log(`👥 Loaded ${players.length} players`);
@@ -167,6 +167,11 @@ export class Application {
 
     if (output) {
       const outputPath = path.resolve(output);
+      // Create directory if it doesn't exist
+      const outputDir = path.dirname(outputPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
       fs.writeFileSync(outputPath, outputContent, 'utf8');
       console.log(`✅ Results written to: ${outputPath}`);
     } else {
