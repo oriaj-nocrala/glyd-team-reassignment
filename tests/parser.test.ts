@@ -1,7 +1,14 @@
+import 'reflect-metadata';
 import { DataParser } from '../src/data/parser';
 import mock from 'mock-fs';
 
 describe('DataParser', () => {
+  let dataParser: DataParser;
+
+  beforeEach(() => {
+    dataParser = new DataParser();
+  });
+
   afterEach(() => {
     mock.restore();
   });
@@ -15,7 +22,7 @@ describe('DataParser', () => {
         'data/players.csv': csvData,
       });
 
-      const players = await DataParser.parsePlayersFromCSV('data/players.csv');
+      const players = await dataParser.parsePlayersFromCSV('data/players.csv');
 
       expect(players).toHaveLength(1);
       expect(players[0].player_id).toBe(1);
@@ -31,7 +38,7 @@ invalid,100`;
         'data/players.csv': csvData,
       });
 
-      await expect(DataParser.parsePlayersFromCSV('data/players.csv')).rejects.toThrow(
+      await expect(dataParser.parsePlayersFromCSV('data/players.csv')).rejects.toThrow(
         'Failed to parse 1 rows.'
       );
     });
@@ -43,7 +50,7 @@ invalid,100`;
         'data/players.csv': csvData,
       });
 
-      const players = await DataParser.parsePlayersFromCSV('data/players.csv');
+      const players = await dataParser.parsePlayersFromCSV('data/players.csv');
       expect(players).toHaveLength(0);
     });
   });

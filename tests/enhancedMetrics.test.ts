@@ -1,7 +1,13 @@
+import 'reflect-metadata';
 import { EnhancedMetricsCalculator } from '../src/analysis/enhancedMetrics';
 import { EnhancedPlayer } from '../src/types';
 
 describe('EnhancedMetricsCalculator', () => {
+  let enhancedMetricsCalculator: EnhancedMetricsCalculator;
+
+  beforeEach(() => {
+    enhancedMetricsCalculator = new EnhancedMetricsCalculator();
+  });
   const samplePlayers: EnhancedPlayer[] = [
     {
       player_id: 1,
@@ -34,7 +40,7 @@ describe('EnhancedMetricsCalculator', () => {
   describe('calculateEnhancedPlayerScores', () => {
     it('should calculate enhanced scores for all players', () => {
       const playersWithScores =
-        EnhancedMetricsCalculator.calculateEnhancedPlayerScores(samplePlayers);
+        enhancedMetricsCalculator.calculateEnhancedPlayerScores(samplePlayers);
       expect(playersWithScores).toHaveLength(1);
       expect(playersWithScores[0]).toHaveProperty('composite_score');
       expect(playersWithScores[0]).toHaveProperty('level_a_score');

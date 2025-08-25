@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { TeamShuffler } from '../src/assignment/shuffler';
 import { Player } from '../src/types';
 

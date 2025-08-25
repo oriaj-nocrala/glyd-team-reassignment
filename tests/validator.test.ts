@@ -1,46 +1,52 @@
+import 'reflect-metadata';
 import { DataValidator } from '../src/data/validator';
 import { InvalidTeamConstraintsError } from '../src/errors';
 
 describe('DataValidator', () => {
+  let dataValidator: DataValidator;
+
+  beforeEach(() => {
+    dataValidator = new DataValidator();
+  });
   describe('validateTeamConstraints', () => {
     it('should not throw for valid team configurations', () => {
-      expect(() => DataValidator.validateTeamConstraints(12, 3)).not.toThrow();
+      expect(() => dataValidator.validateTeamConstraints(12, 3)).not.toThrow();
     });
 
     it('should throw for too few teams', () => {
-      expect(() => DataValidator.validateTeamConstraints(10, 1)).toThrow(InvalidTeamConstraintsError);
+      expect(() => dataValidator.validateTeamConstraints(10, 1)).toThrow(InvalidTeamConstraintsError);
     });
 
     it('should throw for more teams than players', () => {
-      expect(() => DataValidator.validateTeamConstraints(5, 10)).toThrow(InvalidTeamConstraintsError);
+      expect(() => dataValidator.validateTeamConstraints(5, 10)).toThrow(InvalidTeamConstraintsError);
     });
 
     it('should throw for configurations with too few players per team', () => {
-      expect(() => DataValidator.validateTeamConstraints(8, 5)).toThrow(InvalidTeamConstraintsError);
+      expect(() => dataValidator.validateTeamConstraints(8, 5)).toThrow(InvalidTeamConstraintsError);
     });
 
     it('should not throw for edge cases', () => {
-      expect(() => DataValidator.validateTeamConstraints(4, 2)).not.toThrow();
-      expect(() => DataValidator.validateTeamConstraints(7, 3)).not.toThrow();
+      expect(() => dataValidator.validateTeamConstraints(4, 2)).not.toThrow();
+      expect(() => dataValidator.validateTeamConstraints(7, 3)).not.toThrow();
     });
   });
 
   describe('calculateExpectedTeamSizes', () => {
     it('should calculate even distribution', () => {
-      const sizes = DataValidator.calculateExpectedTeamSizes(12, 3);
+      const sizes = dataValidator.calculateExpectedTeamSizes(12, 3);
       expect(sizes).toEqual([4, 4, 4]);
     });
 
     it('should distribute remainder players evenly', () => {
-      const sizes = DataValidator.calculateExpectedTeamSizes(10, 3);
+      const sizes = dataValidator.calculateExpectedTeamSizes(10, 3);
       expect(sizes).toEqual([4, 3, 3]); // 10 = 3*3 + 1, so first team gets extra
     });
 
     it('should handle various remainders', () => {
-      const sizes1 = DataValidator.calculateExpectedTeamSizes(11, 4);
+      const sizes1 = dataValidator.calculateExpectedTeamSizes(11, 4);
       expect(sizes1).toEqual([3, 3, 3, 2]); // 11 = 4*2 + 3, so first 3 teams get extra
 
-      const sizes2 = DataValidator.calculateExpectedTeamSizes(13, 3);
+      const sizes2 = dataValidator.calculateExpectedTeamSizes(13, 3);
       expect(sizes2).toEqual([5, 4, 4]); // 13 = 3*4 + 1, so first team gets extra
     });
 
@@ -54,7 +60,7 @@ describe('DataValidator', () => {
       ];
 
       testCases.forEach(([totalPlayers, targetTeams]) => {
-        const sizes = DataValidator.calculateExpectedTeamSizes(totalPlayers, targetTeams);
+        const sizes = dataValidator.calculateExpectedTeamSizes(totalPlayers, targetTeams);
         const minSize = Math.min(...sizes);
         const maxSize = Math.max(...sizes);
 
@@ -68,7 +74,7 @@ describe('DataValidator', () => {
     it('should detect no duplicates in clean data', () => {
       const players = [{ player_id: 1 } as any, { player_id: 2 } as any, { player_id: 3 } as any];
 
-      const result = DataValidator.checkDuplicateIds(players);
+      const result = dataValidator.checkDuplicateIds(players);
       expect(result.hasDuplicates).toBe(false);
       expect(result.duplicates).toEqual([]);
     });
@@ -82,13 +88,13 @@ describe('DataValidator', () => {
         { player_id: 2 } as any,
       ];
 
-      const result = DataValidator.checkDuplicateIds(players);
+      const result = dataValidator.checkDuplicateIds(players);
       expect(result.hasDuplicates).toBe(true);
       expect(result.duplicates.sort()).toEqual([1, 2]);
     });
 
     it('should handle empty array', () => {
-      const result = DataValidator.checkDuplicateIds([]);
+      const result = dataValidator.checkDuplicateIds([]);
       expect(result.hasDuplicates).toBe(false);
       expect(result.duplicates).toEqual([]);
     });
@@ -113,7 +119,7 @@ describe('DataValidator', () => {
         },
       ];
 
-      const cleaned = DataValidator.cleanPlayerData(dirtyPlayers);
+      const cleaned = dataValidator.cleanPlayerData(dirtyPlayers);
 
       expect(cleaned[0].historical_events_participated).toBe(0);
       expect(cleaned[0].historical_event_engagements).toBe(0);
@@ -143,7 +149,7 @@ describe('DataValidator', () => {
         },
       ];
 
-      const cleaned = DataValidator.cleanPlayerData(players);
+      const cleaned = dataValidator.cleanPlayerData(players);
       expect(cleaned[0].days_active_last_30).toBe(30);
     });
 
@@ -165,7 +171,7 @@ describe('DataValidator', () => {
         },
       ];
 
-      const cleaned = DataValidator.cleanPlayerData(players);
+      const cleaned = dataValidator.cleanPlayerData(players);
       expect(cleaned[0]).toEqual(players[0]);
     });
   });

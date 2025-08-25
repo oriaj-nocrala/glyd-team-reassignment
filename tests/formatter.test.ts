@@ -1,7 +1,13 @@
+import 'reflect-metadata';
 import { OutputFormatter } from '../src/output/formatter';
 import { AssignmentResult } from '../src/types';
 
 describe('OutputFormatter', () => {
+  let outputFormatter: OutputFormatter;
+
+  beforeEach(() => {
+    outputFormatter = new OutputFormatter();
+  });
   const sampleResult: AssignmentResult = {
     teams: [
       {
@@ -32,7 +38,7 @@ describe('OutputFormatter', () => {
 
   describe('formatCSV', () => {
     it('should format output as CSV', () => {
-      const csv = OutputFormatter.formatCSV(sampleResult);
+      const csv = outputFormatter.formatCSV(sampleResult);
       expect(csv).toContain('player_id,new_team_id,composite_score,old_team_id,old_team_name');
       expect(csv).toContain('1,1,0.8000,1,"Team_A"');
     });
@@ -40,14 +46,14 @@ describe('OutputFormatter', () => {
 
   describe('formatSimpleList', () => {
     it('should format output as a simple list', () => {
-      const list = OutputFormatter.formatSimpleList(sampleResult);
+      const list = outputFormatter.formatSimpleList(sampleResult);
       expect(list).toContain('1,1,0.8000');
     });
   });
 
   describe('formatTeamAssignments', () => {
     it('should format output as a detailed summary', () => {
-      const summary = OutputFormatter.formatTeamAssignments(sampleResult);
+      const summary = outputFormatter.formatTeamAssignments(sampleResult);
       expect(summary).toContain('TEAM REASSIGNMENT RESULTS');
       expect(summary).toContain('Team 1');
     });

@@ -1,7 +1,13 @@
+import 'reflect-metadata';
 import { FeatureEngineering } from '../src/analysis/featureEngineering';
 import { Player, EventRecord, MessageRecord, SpendRecord } from '../src/types';
 
 describe('FeatureEngineering', () => {
+  let featureEngineering: FeatureEngineering;
+
+  beforeEach(() => {
+    featureEngineering = new FeatureEngineering();
+  });
   const samplePlayer: Player = {
     player_id: 1,
     historical_events_participated: 0,
@@ -39,7 +45,7 @@ describe('FeatureEngineering', () => {
           points_used: 10,
         },
       ];
-      const enhanced = FeatureEngineering.enhancePlayersWithLevelB([samplePlayer], events, [], []);
+      const enhanced = featureEngineering.enhancePlayersWithLevelB([samplePlayer], events, [], []);
       expect(enhanced[0].event_variety_score).toBeGreaterThan(0);
       expect(enhanced[0].high_value_events_ratio).toBeGreaterThan(0);
     });
@@ -56,7 +62,7 @@ describe('FeatureEngineering', () => {
           message_reply_to_id: 1,
         },
       ];
-      const enhanced = FeatureEngineering.enhancePlayersWithLevelB(
+      const enhanced = featureEngineering.enhancePlayersWithLevelB(
         [samplePlayer],
         [],
         messages,
@@ -89,7 +95,7 @@ describe('FeatureEngineering', () => {
           is_consumed: false,
         },
       ];
-      const enhanced = FeatureEngineering.enhancePlayersWithLevelB([samplePlayer], [], [], spends);
+      const enhanced = featureEngineering.enhancePlayersWithLevelB([samplePlayer], [], [], spends);
       expect(enhanced[0].spending_efficiency).toBeGreaterThan(0);
       expect(enhanced[0].investment_vs_consumption).toBeGreaterThan(0);
     });
