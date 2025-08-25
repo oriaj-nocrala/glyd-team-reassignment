@@ -1,12 +1,13 @@
+import { injectable } from 'tsyringe';
 import { Player, EventRecord, MessageRecord, SpendRecord, EnhancedPlayer } from '../types';
 import { logger } from '../utils/logger';
 
-
+@injectable()
 export class FeatureEngineering {
   /**
    * Enhance players with Level B derived features
    */
-  static enhancePlayersWithLevelB(
+  enhancePlayersWithLevelB(
     players: Player[],
     events: EventRecord[],
     messages: MessageRecord[],
@@ -42,7 +43,7 @@ export class FeatureEngineering {
   /**
    * Group events by player ID for efficient lookup
    */
-  private static groupEventsByPlayer(events: EventRecord[]): Map<number, EventRecord[]> {
+  private groupEventsByPlayer(events: EventRecord[]): Map<number, EventRecord[]> {
     const grouped = new Map<number, EventRecord[]>();
 
     events.forEach((event) => {
@@ -58,7 +59,7 @@ export class FeatureEngineering {
   /**
    * Group messages by player ID
    */
-  private static groupMessagesByPlayer(messages: MessageRecord[]): Map<number, MessageRecord[]> {
+  private groupMessagesByPlayer(messages: MessageRecord[]): Map<number, MessageRecord[]> {
     const grouped = new Map<number, MessageRecord[]>();
 
     messages.forEach((message) => {
@@ -74,7 +75,7 @@ export class FeatureEngineering {
   /**
    * Group spend records by player ID
    */
-  private static groupSpendsByPlayer(spends: SpendRecord[]): Map<number, SpendRecord[]> {
+  private groupSpendsByPlayer(spends: SpendRecord[]): Map<number, SpendRecord[]> {
     const grouped = new Map<number, SpendRecord[]>();
 
     spends.forEach((spend) => {
@@ -90,7 +91,7 @@ export class FeatureEngineering {
   /**
    * Calculate event quality metrics from raw events
    */
-  private static calculateEventQualityMetrics(
+  private calculateEventQualityMetrics(
     playerEvents: EventRecord[],
     allEvents: EventRecord[]
   ): {
@@ -152,7 +153,7 @@ export class FeatureEngineering {
   /**
    * Calculate communication quality metrics from messages
    */
-  private static calculateCommunicationMetrics(
+  private calculateCommunicationMetrics(
     playerMessages: MessageRecord[],
     allMessages: MessageRecord[]
   ): {
@@ -199,7 +200,7 @@ export class FeatureEngineering {
   /**
    * Calculate spending behavior metrics
    */
-  private static calculateSpendingMetrics(
+  private calculateSpendingMetrics(
     playerSpends: SpendRecord[],
     allSpends: SpendRecord[]
   ): {
@@ -252,7 +253,7 @@ export class FeatureEngineering {
   /**
    * Get feature importance analysis for Level B metrics
    */
-  static analyzeLevelBFeatureImportance(enhancedPlayers: EnhancedPlayer[]): {
+  analyzeLevelBFeatureImportance(enhancedPlayers: EnhancedPlayer[]): {
     event_features: { [key: string]: { mean: number; std: number; range: [number, number] } };
     communication_features: {
       [key: string]: { mean: number; std: number; range: [number, number] };

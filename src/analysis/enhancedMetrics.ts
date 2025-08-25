@@ -1,8 +1,9 @@
+import { injectable } from 'tsyringe';
 import { EnhancedPlayer, EnhancedPlayerWithScore, EnhancedBalanceMetrics } from '../types';
 
-
+@injectable()
 export class EnhancedMetricsCalculator {
-  private static readonly DEFAULT_ENHANCED_WEIGHTS: EnhancedBalanceMetrics = {
+  private readonly DEFAULT_ENHANCED_WEIGHTS: EnhancedBalanceMetrics = {
     // Level A weights (reduced to make room for Level B)
     engagement_weight: 0.25, // Was 0.4
     activity_weight: 0.2, // Was 0.3
@@ -18,7 +19,7 @@ export class EnhancedMetricsCalculator {
   /**
    * Calculate enhanced composite scores combining Level A and Level B features
    */
-  static calculateEnhancedPlayerScores(
+  calculateEnhancedPlayerScores(
     enhancedPlayers: EnhancedPlayer[],
     weights: EnhancedBalanceMetrics = this.DEFAULT_ENHANCED_WEIGHTS
   ): EnhancedPlayerWithScore[] {
@@ -51,7 +52,7 @@ export class EnhancedMetricsCalculator {
   /**
    * Normalize all metrics (Level A + Level B) to 0-1 scale
    */
-  private static normalizeAllMetrics(players: EnhancedPlayer[]): NormalizedMetrics[] {
+  private normalizeAllMetrics(players: EnhancedPlayer[]): NormalizedMetrics[] {
     if (players.length === 0) {
       return [];
     }
@@ -98,14 +99,14 @@ export class EnhancedMetricsCalculator {
   /**
    * Normalize a value to 0-1 scale
    */
-  private static normalize(value: number, range: { min: number; max: number }): number {
+  private normalize(value: number, range: { min: number; max: number }): number {
     if (range.max === range.min) {
       return 0.5; // If all values are the same, use middle value
     }
     return (value - range.min) / (range.max - range.min);
   }
 
-  private static normalizeLevelAMetrics(players: EnhancedPlayer[], ranges: MetricRanges) {
+  private normalizeLevelAMetrics(players: EnhancedPlayer[], ranges: MetricRanges) {
     return players.map((p) => ({
       engagement: this.normalize(p.historical_event_engagements, ranges.engagement),
       activity: this.normalize(p.days_active_last_30, ranges.activity),
@@ -114,7 +115,7 @@ export class EnhancedMetricsCalculator {
     }));
   }
 
-  private static normalizeEventQualityMetrics(players: EnhancedPlayer[], ranges: MetricRanges) {
+  private normalizeEventQualityMetrics(players: EnhancedPlayer[], ranges: MetricRanges) {
     return players.map((p) => ({
       eventVariety: this.normalize(p.event_variety_score, ranges.eventVariety),
       highValueEvents: this.normalize(p.high_value_events_ratio, ranges.highValueEvents),
@@ -123,7 +124,7 @@ export class EnhancedMetricsCalculator {
     }));
   }
 
-  private static normalizeCommunicationMetrics(players: EnhancedPlayer[], ranges: MetricRanges) {
+  private normalizeCommunicationMetrics(players: EnhancedPlayer[], ranges: MetricRanges) {
     return players.map((p) => ({
       messageEngagement: this.normalize(p.message_engagement_ratio, ranges.messageEngagement),
       conversationParticipation: this.normalize(
@@ -135,7 +136,7 @@ export class EnhancedMetricsCalculator {
     }));
   }
 
-  private static normalizeSpendingMetrics(players: EnhancedPlayer[], ranges: MetricRanges) {
+  private normalizeSpendingMetrics(players: EnhancedPlayer[], ranges: MetricRanges) {
     return players.map((p) => ({
       spendingEfficiency: this.normalize(p.spending_efficiency, ranges.spendingEfficiency),
       consumableUsageRate: this.normalize(p.consumable_usage_rate, ranges.consumableUsageRate),
@@ -150,7 +151,7 @@ export class EnhancedMetricsCalculator {
   /**
    * Calculate Level A score using traditional metrics
    */
-  private static calculateLevelAScore(
+  private calculateLevelAScore(
     normalized: NormalizedMetrics,
     weights: EnhancedBalanceMetrics
   ): number {
@@ -162,7 +163,7 @@ export class EnhancedMetricsCalculator {
     );
   }
 
-  private static readonly LEVEL_B_SUB_WEIGHTS = {
+  private readonly LEVEL_B_SUB_WEIGHTS = {
     eventQuality: { variety: 0.3, highValue: 0.3, consistency: 0.2, recency: 0.2 },
     communication: { engagement: 0.3, participation: 0.3, length: 0.2, replyRate: 0.2 },
     spending: { efficiency: 0.4, usageRate: 0.2, frequency: 0.2, investment: 0.2 },
@@ -171,7 +172,7 @@ export class EnhancedMetricsCalculator {
   /**
    * Calculate Level B score using derived features
    */
-  private static calculateLevelBScore(
+  private calculateLevelBScore(
     normalized: NormalizedMetrics,
     weights: EnhancedBalanceMetrics
   ): number {
@@ -207,7 +208,7 @@ export class EnhancedMetricsCalculator {
   /**
    * Analyze the contribution of Level A vs Level B scores
    */
-  static analyzeLevelContributions(players: EnhancedPlayerWithScore[]): {
+  analyzeLevelContributions(players: EnhancedPlayerWithScore[]): {
     level_a_stats: { mean: number; std: number; min: number; max: number };
     level_b_stats: { mean: number; std: number; min: number; max: number };
     correlation: number;
@@ -275,7 +276,7 @@ export class EnhancedMetricsCalculator {
   /**
    * Generate Level B feature importance report
    */
-  static generateLevelBReport(
+  generateLevelBReport(
     players: EnhancedPlayerWithScore[],
     weights: EnhancedBalanceMetrics = this.DEFAULT_ENHANCED_WEIGHTS
   ): string {

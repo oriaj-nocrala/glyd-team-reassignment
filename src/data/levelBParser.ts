@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import csv from 'csv-parser';
+import { injectable } from 'tsyringe';
 import { InvalidCsvError } from '../errors';
 import {
   EventRecord,
@@ -11,12 +12,12 @@ import {
 } from '../types';
 import { logger } from '../utils/logger';
 
-
+@injectable()
 export class LevelBDataParser {
   /**
    * Parse events CSV file
    */
-  static async parseEventsFromCSV(filePath: string): Promise<EventRecord[]> {
+  async parseEventsFromCSV(filePath: string): Promise<EventRecord[]> {
     return new Promise((resolve, reject) => {
       const events: EventRecord[] = [];
       const invalidRows: { row: EventCSVRow; error: Error }[] = [];
@@ -61,7 +62,7 @@ export class LevelBDataParser {
   /**
    * Parse messages CSV file
    */
-  static async parseMessagesFromCSV(filePath: string): Promise<MessageRecord[]> {
+  async parseMessagesFromCSV(filePath: string): Promise<MessageRecord[]> {
     return new Promise((resolve, reject) => {
       const messages: MessageRecord[] = [];
       const invalidRows: { row: MessageCSVRow; error: Error }[] = [];
@@ -107,7 +108,7 @@ export class LevelBDataParser {
   /**
    * Parse spend CSV file
    */
-  static async parseSpendFromCSV(filePath: string): Promise<SpendRecord[]> {
+  async parseSpendFromCSV(filePath: string): Promise<SpendRecord[]> {
     return new Promise((resolve, reject) => {
       const spends: SpendRecord[] = [];
       const invalidRows: { row: SpendCSVRow; error: Error }[] = [];
@@ -154,7 +155,7 @@ export class LevelBDataParser {
   /**
    * Parse all Level B data files
    */
-  static async parseAllLevelBData(paths?: {
+  async parseAllLevelBData(paths?: {
     events?: string;
     messages?: string;
     spends?: string;
@@ -182,7 +183,7 @@ export class LevelBDataParser {
   /**
    * Get Level B data summary statistics
    */
-  static getLevelBSummary(
+  getLevelBSummary(
     events: EventRecord[],
     messages: MessageRecord[],
     spends: SpendRecord[]

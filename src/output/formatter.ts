@@ -1,11 +1,12 @@
+import { injectable } from 'tsyringe';
 import { AssignmentResult, Team } from '../types';
 
-
+@injectable()
 export class OutputFormatter {
   /**
    * Format team assignments for console output
    */
-  static formatTeamAssignments(result: AssignmentResult): string {
+  formatTeamAssignments(result: AssignmentResult): string {
     let output = '';
 
     output += this.formatHeader(result);
@@ -18,7 +19,7 @@ export class OutputFormatter {
   /**
    * Format assignment header with basic info
    */
-  private static formatHeader(result: AssignmentResult): string {
+  private formatHeader(result: AssignmentResult): string {
     const { total_players, target_teams, seed } = result;
 
     let header = '\n';
@@ -37,7 +38,7 @@ export class OutputFormatter {
   /**
    * Format detailed team information
    */
-  private static formatTeamDetails(teams: Team[]): string {
+  private formatTeamDetails(teams: Team[]): string {
     let output = '🏆 Team Details:\n\n';
 
     teams.forEach((team) => {
@@ -65,7 +66,7 @@ export class OutputFormatter {
   /**
    * Format fairness and balance report
    */
-  private static formatFairnessReport(result: AssignmentResult): string {
+  private formatFairnessReport(result: AssignmentResult): string {
     const { fairness_stats } = result;
 
     let report = '⚖️  Balance Analysis:\n\n';
@@ -100,7 +101,7 @@ export class OutputFormatter {
   /**
    * Assess overall balance quality with letter grade
    */
-  private static assessBalance(scoreStdDev: number, sizeDifference: number): string {
+  private assessBalance(scoreStdDev: number, sizeDifference: number): string {
     if (scoreStdDev < 0.05 && sizeDifference === 0) {
       return 'A+ (Excellent)';
     } else if (scoreStdDev < 0.1 && sizeDifference <= 1) {
@@ -117,7 +118,7 @@ export class OutputFormatter {
   /**
    * Format simple assignment list for piping/redirection
    */
-  static formatSimpleList(result: AssignmentResult): string {
+  formatSimpleList(result: AssignmentResult): string {
     let output = '';
 
     result.teams.forEach((team) => {
@@ -132,7 +133,7 @@ export class OutputFormatter {
   /**
    * Format as CSV for external processing
    */
-  static formatCSV(result: AssignmentResult): string {
+  formatCSV(result: AssignmentResult): string {
     let csv = 'player_id,new_team_id,composite_score,old_team_id,old_team_name\n';
 
     result.teams.forEach((team) => {
@@ -147,7 +148,7 @@ export class OutputFormatter {
   /**
    * Format team summary table
    */
-  static formatTeamSummaryTable(teams: Team[]): string {
+  formatTeamSummaryTable(teams: Team[]): string {
     let table = '\n📊 Team Summary Table:\n\n';
 
     // Header
@@ -170,7 +171,7 @@ export class OutputFormatter {
   /**
    * Format changes summary (what changed from original teams)
    */
-  static formatChangesSummary(result: AssignmentResult): string {
+  formatChangesSummary(result: AssignmentResult): string {
     const moves: { player_id: number; from: string; to: number }[] = [];
     let stayedCount = 0;
 
@@ -209,7 +210,7 @@ export class OutputFormatter {
   /**
    * Format complete output with all sections
    */
-  static formatComplete(result: AssignmentResult): string {
+  formatComplete(result: AssignmentResult): string {
     let output = '';
 
     output += this.formatTeamAssignments(result);

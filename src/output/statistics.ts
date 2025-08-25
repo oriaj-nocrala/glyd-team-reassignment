@@ -1,11 +1,12 @@
+import { injectable } from 'tsyringe';
 import { AssignmentResult, Team, FairnessStats } from '../types';
 
-
+@injectable()
 export class StatisticsGenerator {
   /**
    * Generate comprehensive team summaries
    */
-  static generateTeamSummary(teams: Team[]): {
+  generateTeamSummary(teams: Team[]): {
     team_id: number;
     size: number;
     average_score: number;
@@ -21,7 +22,7 @@ export class StatisticsGenerator {
   /**
    * Analyze individual team statistics
    */
-  private static analyzeTeam(team: Team): {
+  private analyzeTeam(team: Team): {
     team_id: number;
     size: number;
     average_score: number;
@@ -88,7 +89,7 @@ export class StatisticsGenerator {
   /**
    * Calculate cross-team fairness statistics
    */
-  static calculateFairnessStats(teams: Team[]): FairnessStats & {
+  calculateFairnessStats(teams: Team[]): FairnessStats & {
     coefficient_of_variation: number;
     gini_coefficient: number;
     balance_score: number;
@@ -143,7 +144,7 @@ export class StatisticsGenerator {
   /**
    * Calculate Gini coefficient for measuring inequality
    */
-  private static calculateGiniCoefficient(values: number[]): number {
+  private calculateGiniCoefficient(values: number[]): number {
     if (values.length === 0) return 0;
 
     const sortedValues = [...values].sort((a, b) => a - b);
@@ -163,7 +164,7 @@ export class StatisticsGenerator {
   /**
    * Calculate overall balance score (0-100)
    */
-  private static calculateBalanceScore(stdDev: number, cv: number, teamSizes: number[]): number {
+  private calculateBalanceScore(stdDev: number, cv: number, teamSizes: number[]): number {
     // Score components (each 0-1)
     const scoreBalance = Math.max(0, 1 - stdDev / 0.2); // Penalize high std dev
     const variationBalance = Math.max(0, 1 - cv * 2); // Penalize high coefficient of variation
@@ -178,7 +179,7 @@ export class StatisticsGenerator {
   /**
    * Assess balance quality level
    */
-  private static assessBalanceQuality(
+  private assessBalanceQuality(
     scoreStdDev: number,
     sizeDifference: number
   ): 'excellent' | 'good' | 'fair' | 'poor' {
@@ -196,7 +197,7 @@ export class StatisticsGenerator {
   /**
    * Generate human-readable justification
    */
-  private static generateJustification(
+  private generateJustification(
     quality: 'excellent' | 'good' | 'fair' | 'poor',
     scoreStdDev: number,
     teamSizes: number[]
@@ -225,7 +226,7 @@ export class StatisticsGenerator {
   /**
    * Generate player movement analysis
    */
-  static analyzePlayerMovement(result: AssignmentResult): {
+  analyzePlayerMovement(result: AssignmentResult): {
     total_moves: number;
     movement_rate: number;
     moves_by_team: { from_team: string; to_team: number; count: number }[];
@@ -278,7 +279,7 @@ export class StatisticsGenerator {
   /**
    * Generate score distribution analysis
    */
-  static analyzeScoreDistribution(result: AssignmentResult): {
+  analyzeScoreDistribution(result: AssignmentResult): {
     overall_stats: {
       mean: number;
       median: number;
@@ -345,7 +346,7 @@ export class StatisticsGenerator {
   /**
    * Create score histogram for visualization
    */
-  private static createScoreHistogram(
+  private createScoreHistogram(
     scores: number[],
     bins: number = 5
   ): { range: string; count: number }[] {

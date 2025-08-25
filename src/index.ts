@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+import 'reflect-metadata';
+import { Command } from 'commander';
 import container from './container';
-import { IApplication } from './application';
+import { Application } from './application';
 import { CLIOptions } from './types';
+import { InvalidCsvError, InvalidPlayerError, InvalidTeamConstraintsError } from './errors';
 
 const program = new Command();
 
@@ -31,7 +34,7 @@ async function main() {
   const options: CLIOptions = program.opts();
 
   try {
-    const app = container.resolve<IApplication>('IApplication');
+    const app = container.resolve(Application);
     await app.run(options);
   } catch (error) {
     if (error instanceof InvalidCsvError) {

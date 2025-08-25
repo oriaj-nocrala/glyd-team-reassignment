@@ -21,7 +21,6 @@ export class Application {
     private readonly levelBDataParser: LevelBDataParser,
     private readonly featureEngineering: FeatureEngineering,
     private readonly enhancedMetricsCalculator: EnhancedMetricsCalculator,
-    private readonly teamShuffler: TeamShuffler,
     private readonly outputFormatter: OutputFormatter,
     private readonly statisticsGenerator: StatisticsGenerator
   ) {}
@@ -30,21 +29,20 @@ export class Application {
     const { teams, input, output, verbose } = options;
 
     // Validate input and output paths
-    const inputPath = validatePath(input);
+    const inputPath = validatePath(input || 'data/level_a_players.csv');
     if (output) {
       validatePath(output, true);
     }
 
-    const cleanedPlayers = await this.loadAndValidatePlayerData(inputPath, verbose);
+    const cleanedPlayers = await this.loadAndValidatePlayerData(inputPath, verbose || false);
 
-    // Validate team constraints
+    // Validate team constraints  
     this.dataValidator.validateTeamConstraints(cleanedPlayers.length, teams);
 
     // Show data summary if verbose
     if (verbose) {
       const summary = this.dataParser.getDataSummary(cleanedPlayers);
-      console.log('
-📊 Data Summary:');
+      console.log('\n📊 Data Summary:');
       console.log(`   • Total players: ${summary.total_players}`);
       console.log(
         `   • Engagement range: ${summary.engagement_range.min}-${summary.engagement_range.max} (avg: ${summary.engagement_range.avg.toFixed(1)})`
@@ -78,7 +76,7 @@ export class Application {
       console.log(`👥 Loaded ${players.length} players`);
     }
 
-    const { valid, invalid } = this.dataValidator.validatePlayers(players);
+    const { valid, invalid } = this.dataParser.validatePlayers(players);
 
     if (invalid.length > 0) {
       throw new InvalidPlayerError(`${invalid.length} invalid players excluded`, invalid);
@@ -113,8 +111,7 @@ export class Application {
             levelBData.messages,
             levelBData.spends
           );
-          console.log(`
-🔬 Level B Data Analysis:`);
+          console.log('\n🔬 Level B Data Analysis:');
           console.log(
             `   • Event types: ${Array.from(summary.events_summary.engagement_types).join(', ')}`
           );
@@ -131,10 +128,9 @@ export class Application {
           levelBData.spends
         );
 
-        const playersWithEnhancedScores =
-          this.enhancedMetricsCalculator.calculateEnhancedPlayerScores(enhancedPlayers);
+        const playersWithEnhancedScores = this.enhancedMetricsCalculator.calculateEnhancedPlayerScores(enhancedPlayers);
 
-        finalPlayers = playersWithEnhancedScores.map((player) => ({
+        finalPlayers = playersWithEnhancedScores.map((player: any) => ({
           ...player,
           composite_score: player.composite_score,
         }));
@@ -181,8 +177,7 @@ export class Application {
       const movementAnalysis = this.statisticsGenerator.analyzePlayerMovement(result);
       const scoreDistribution = this.statisticsGenerator.analyzeScoreDistribution(result);
 
-      console.log('
-📈 Additional Statistics:');
+      console.log('\n📈 Additional Statistics:');
       console.log(
         `   • Player movements: ${movementAnalysis.total_moves} (${movementAnalysis.movement_rate.toFixed(1)}%)`
       );
@@ -194,9 +189,8 @@ export class Application {
       );
 
       if (verbose && movementAnalysis.moves_by_team.length > 0) {
-        console.log('
-🔄 Team Movement Details:');
-        movementAnalysis.moves_by_team.slice(0, 5).forEach((move) => {
+        console.log('\n🔄 Team Movement Details:');
+        movementAnalysis.moves_by_team.slice(0, 5).forEach((move: any) => {
           console.log(`   • ${move.from_team} → Team ${move.to_team}: ${move.count} players`);
         });
       }
@@ -207,8 +201,7 @@ export class Application {
     }
 
     if (verbose) {
-      console.log(`
-✅ Assignment completed successfully!`);
+      console.log('\n✅ Assignment completed successfully!');
       console.log(
         `   • Balance quality: ${result.fairness_stats.score_standard_deviation < 0.1 ? 'Good' : 'Fair'}`
       );

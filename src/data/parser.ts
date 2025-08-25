@@ -1,15 +1,16 @@
 import * as fs from 'fs';
 import csv from 'csv-parser';
+import { injectable } from 'tsyringe';
 import { Player, PlayerCSVRow } from '../types';
 import { logger } from '../utils/logger';
 import { InvalidCsvError } from '../errors';
 
-
+@injectable()
 export class DataParser {
   /**
    * Parse CSV file and return array of players
    */
-  static async parsePlayersFromCSV(filePath: string): Promise<Player[]> {
+  async parsePlayersFromCSV(filePath: string): Promise<Player[]> {
     return new Promise((resolve, reject) => {
       const players: Player[] = [];
       const invalidRows: { row: PlayerCSVRow; error: Error }[] = [];
@@ -59,7 +60,7 @@ export class DataParser {
   /**
    * Validate parsed player data
    */
-  static validatePlayers(players: Player[]): { valid: Player[]; invalid: Player[] } {
+  validatePlayers(players: Player[]): { valid: Player[]; invalid: Player[] } {
     const valid: Player[] = [];
     const invalid: Player[] = [];
 
@@ -77,7 +78,7 @@ export class DataParser {
   /**
    * Check if a player has valid required data
    */
-  private static isValidPlayer(player: Player): boolean {
+  private isValidPlayer(player: Player): boolean {
     return (
       player.player_id > 0 &&
       typeof player.historical_events_participated === 'number' &&
@@ -90,7 +91,7 @@ export class DataParser {
   /**
    * Get data summary statistics
    */
-  static getDataSummary(players: Player[]): {
+  getDataSummary(players: Player[]): {
     total_players: number;
     engagement_range: { min: number; max: number; avg: number };
     activity_range: { min: number; max: number; avg: number };

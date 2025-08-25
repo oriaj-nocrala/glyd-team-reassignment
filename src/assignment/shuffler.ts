@@ -1,10 +1,11 @@
+import { injectable } from 'tsyringe';
 import { Player, PlayerWithScore, Team, AssignmentResult } from '../types';
 import { MetricsCalculator } from '../analysis/metrics';
 import { TeamBalancer } from '../analysis/balancer';
 import { DeterministicRandom, SeedManager } from './deterministic';
 import { logger } from '../utils/logger';
 
-
+@injectable()
 export class TeamShuffler {
   private static readonly SCORE_GROUPING_THRESHOLD = 0.01; // 1% threshold
   private rng!: DeterministicRandom;

@@ -1,12 +1,13 @@
+import { injectable } from 'tsyringe';
 import { InvalidTeamConstraintsError } from '../errors';
 import { Player } from '../types';
 
-
+@injectable()
 export class DataValidator {
   /**
    * Clean and normalize player data
    */
-  static cleanPlayerData(players: Player[]): Player[] {
+  cleanPlayerData(players: Player[]): Player[] {
     return players.map((player) => ({
       ...player,
       // Ensure non-negative values for metrics
@@ -24,7 +25,7 @@ export class DataValidator {
   /**
    * Remove outliers based on statistical thresholds
    */
-  static removeOutliers(
+  removeOutliers(
     players: Player[],
     threshold: number = 3
   ): {
@@ -57,7 +58,7 @@ export class DataValidator {
   /**
    * Validate team assignment constraints
    */
-  static validateTeamConstraints(
+  validateTeamConstraints(
     totalPlayers: number,
     targetTeams: number
   ): void {
@@ -89,7 +90,7 @@ export class DataValidator {
   /**
    * Calculate expected team sizes for balanced distribution
    */
-  static calculateExpectedTeamSizes(totalPlayers: number, targetTeams: number): number[] {
+  calculateExpectedTeamSizes(totalPlayers: number, targetTeams: number): number[] {
     const baseSize = Math.floor(totalPlayers / targetTeams);
     const remainder = totalPlayers % targetTeams;
 
@@ -106,7 +107,7 @@ export class DataValidator {
   /**
    * Check for duplicate player IDs
    */
-  static checkDuplicateIds(players: Player[]): {
+  checkDuplicateIds(players: Player[]): {
     hasDuplicates: boolean;
     duplicates: number[];
   } {
