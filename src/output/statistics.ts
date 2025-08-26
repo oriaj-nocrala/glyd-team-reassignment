@@ -1,22 +1,26 @@
 import { injectable } from 'tsyringe';
-import { AssignmentResult, Team, FairnessStats } from '../types';
+import { AssignmentResult, Team } from '../types';
+import { TeamAnalyzer, TeamAnalysis } from '../analysis/teamAnalyzer';
+import { BalanceAnalyzer, ExtendedFairnessStats } from '../analysis/balanceAnalyzer';
+import { DistributionAnalyzer, ScoreDistribution, PlayerMovement } from '../analysis/distributionAnalyzer';
 
+/**
+ * Coordinates statistical analysis by delegating to specialized analyzers
+ * Follows Single Responsibility Principle - orchestrates analysis without doing calculations
+ */
 @injectable()
 export class StatisticsGenerator {
+  constructor(
+    private readonly teamAnalyzer: TeamAnalyzer,
+    private readonly balanceAnalyzer: BalanceAnalyzer,
+    private readonly distributionAnalyzer: DistributionAnalyzer
+  ) {}
   /**
    * Generate comprehensive team summaries
+   * Delegates to TeamAnalyzer for focused analysis
    */
-  generateTeamSummary(teams: Team[]): {
-    team_id: number;
-    size: number;
-    average_score: number;
-    median_score: number;
-    score_std_dev: number;
-    score_range: { min: number; max: number };
-    top_player: { id: number; score: number };
-    bottom_player: { id: number; score: number };
-  }[] {
-    return teams.map((team) => this.analyzeTeam(team));
+  generateTeamSummary(teams: Team[]): TeamAnalysis[] {
+    return this.teamAnalyzer.analyzeTeams(teams);
   }
 
   /**
@@ -87,58 +91,11 @@ export class StatisticsGenerator {
   }
 
   /**
-   * Calculate cross-team fairness statistics
+   * Calculate cross-team fairness statistics with activity analysis
+   * Delegates to BalanceAnalyzer for specialized analysis
    */
-  calculateFairnessStats(teams: Team[]): FairnessStats & {
-    coefficient_of_variation: number;
-    gini_coefficient: number;
-    balance_score: number;
-  } {
-    if (teams.length === 0) {
-      throw new Error('No teams provided for fairness analysis');
-    }
-
-    const teamAverages = teams.map((team) => team.average_score);
-    const teamSizes = teams.map((team) => team.size);
-
-    // Basic statistics
-    const mean = teamAverages.reduce((sum, avg) => sum + avg, 0) / teamAverages.length;
-    const variance =
-      teamAverages.reduce((sum, avg) => sum + Math.pow(avg - mean, 2), 0) / teamAverages.length;
-    const stdDev = Math.sqrt(variance);
-
-    // Coefficient of variation (relative variability)
-    const coefficientOfVariation = mean > 0 ? stdDev / mean : 0;
-
-    // Gini coefficient for inequality measurement
-    const giniCoefficient = this.calculateGiniCoefficient(teamAverages);
-
-    // Overall balance score (0-100, higher is better)
-    const balanceScore = this.calculateBalanceScore(stdDev, coefficientOfVariation, teamSizes);
-
-    // Generate justification
-    const balanceQuality = this.assessBalanceQuality(
-      stdDev,
-      Math.max(...teamSizes) - Math.min(...teamSizes)
-    );
-    const justification = this.generateJustification(balanceQuality, stdDev, teamSizes);
-
-    return {
-      score_standard_deviation: stdDev,
-      score_range: {
-        min: Math.min(...teamAverages),
-        max: Math.max(...teamAverages),
-      },
-      size_balance: {
-        min_size: Math.min(...teamSizes),
-        max_size: Math.max(...teamSizes),
-        size_difference: Math.max(...teamSizes) - Math.min(...teamSizes),
-      },
-      justification,
-      coefficient_of_variation: coefficientOfVariation,
-      gini_coefficient: giniCoefficient,
-      balance_score: balanceScore,
-    };
+  calculateFairnessStats(teams: Team[]): ExtendedFairnessStats {
+    return this.balanceAnalyzer.calculateFairnessStats(teams);
   }
 
   /**
@@ -225,74 +182,17 @@ export class StatisticsGenerator {
 
   /**
    * Generate player movement analysis
+   * Delegates to DistributionAnalyzer for specialized analysis
    */
-  analyzePlayerMovement(result: AssignmentResult): {
-    total_moves: number;
-    movement_rate: number;
-    moves_by_team: { from_team: string; to_team: number; count: number }[];
-    top_movers: { player_id: number; score: number; from: string; to: number }[];
-  } {
-    const moves: { player_id: number; score: number; from: string; to: number }[] = [];
-    const movementsByTeam: Map<string, Map<number, number>> = new Map();
-
-    result.teams.forEach((team) => {
-      team.players.forEach((player) => {
-        if (player.current_team_id !== team.team_id) {
-          const fromTeam = player.current_team_name || `Team ${player.current_team_id}`;
-
-          moves.push({
-            player_id: player.player_id,
-            score: player.composite_score,
-            from: fromTeam,
-            to: team.team_id,
-          });
-
-          // Track movements by team
-          if (!movementsByTeam.has(fromTeam)) {
-            movementsByTeam.set(fromTeam, new Map());
-          }
-          const toTeamMap = movementsByTeam.get(fromTeam)!;
-          toTeamMap.set(team.team_id, (toTeamMap.get(team.team_id) || 0) + 1);
-        }
-      });
-    });
-
-    // Convert team movements to array
-    const movesByTeam: { from_team: string; to_team: number; count: number }[] = [];
-    movementsByTeam.forEach((toTeamMap, fromTeam) => {
-      toTeamMap.forEach((count, toTeam) => {
-        movesByTeam.push({ from_team: fromTeam, to_team: toTeam, count });
-      });
-    });
-
-    // Get top movers (highest scoring players who moved)
-    const topMovers = moves.sort((a, b) => b.score - a.score).slice(0, 10);
-
-    return {
-      total_moves: moves.length,
-      movement_rate: (moves.length / result.total_players) * 100,
-      moves_by_team: movesByTeam.sort((a, b) => b.count - a.count),
-      top_movers: topMovers,
-    };
+  analyzePlayerMovement(result: AssignmentResult): PlayerMovement {
+    return this.distributionAnalyzer.analyzePlayerMovement(result);
   }
 
   /**
    * Generate score distribution analysis
+   * Delegates to DistributionAnalyzer for specialized analysis
    */
-  analyzeScoreDistribution(result: AssignmentResult): {
-    overall_stats: {
-      mean: number;
-      median: number;
-      std_dev: number;
-      min: number;
-      max: number;
-      quartiles: { q1: number; q2: number; q3: number };
-    };
-    team_distributions: {
-      team_id: number;
-      score_histogram: { range: string; count: number }[];
-    }[];
-  } {
+  analyzeScoreDistribution(result: AssignmentResult): ScoreDistribution {
     // Collect all scores
     const allScores = result.teams.flatMap((team) =>
       team.players.map((player) => player.composite_score)
@@ -340,6 +240,46 @@ export class StatisticsGenerator {
         quartiles,
       },
       team_distributions: teamDistributions,
+    };
+  }
+
+  /**
+   * Calculate activity statistics using days_active_last_30 as proxy for 7-day activity
+   */
+  private calculateActivityStats(teams: Team[]): {
+    overall_active_last_7_days_percentage: number;
+    teams_active_last_7_days_percentage: {
+      team_id: number;
+      percentage: number;
+    }[];
+    note?: string;
+  } {
+    // Use days_active_last_30 as proxy - assume players with >7 days active in last 30 were likely active in last 7
+    const isActiveProxy = (player: { days_active_last_30: number }): boolean => {
+      return player.days_active_last_30 >= 7;
+    };
+
+    // Calculate overall percentage
+    const allPlayers = teams.flatMap(team => team.players);
+    const totalPlayers = allPlayers.length;
+    const activePlayersOverall = allPlayers.filter(isActiveProxy).length;
+    const overallPercentage = totalPlayers > 0 ? (activePlayersOverall / totalPlayers) * 100 : 0;
+
+    // Calculate per-team percentages
+    const teamPercentages = teams.map(team => {
+      const teamActiveCount = team.players.filter(isActiveProxy).length;
+      const teamPercentage = team.size > 0 ? (teamActiveCount / team.size) * 100 : 0;
+      
+      return {
+        team_id: team.team_id,
+        percentage: Math.round(teamPercentage * 100) / 100, // Round to 2 decimal places
+      };
+    });
+
+    return {
+      overall_active_last_7_days_percentage: Math.round(overallPercentage * 100) / 100,
+      teams_active_last_7_days_percentage: teamPercentages,
+      note: 'Estimated from days_active_last_30 >= 7 as proxy for recent activity',
     };
   }
 

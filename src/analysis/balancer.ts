@@ -112,6 +112,11 @@ export class TeamBalancer {
         size_difference: maxSize - minSize,
       },
       justification,
+      activity_stats: {
+        overall_active_last_7_days_percentage: 0,
+        teams_active_last_7_days_percentage: [],
+        note: 'Activity stats not calculated in balancer - use StatisticsGenerator for detailed activity analysis',
+      },
     };
   }
 

@@ -151,6 +151,14 @@ export interface FairnessStats {
     size_difference: number;
   };
   justification: string;
+  activity_stats: {
+    overall_active_last_7_days_percentage: number;
+    teams_active_last_7_days_percentage: {
+      team_id: number;
+      percentage: number;
+    }[];
+    note?: string;
+  };
 }
 
 export interface BalanceMetrics {
@@ -181,4 +189,5 @@ export interface CLIOptions {
   eventsFile?: string;
   messagesFile?: string;
   spendsFile?: string;
+  robustScores?: boolean;
 }

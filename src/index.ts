@@ -29,6 +29,7 @@ async function main() {
     .option('--events-file <path>', 'Level B events CSV file path', 'data/level_b_events.csv')
     .option('--messages-file <path>', 'Level B messages CSV file path', 'data/level_b_messages.csv')
     .option('--spends-file <path>', 'Level B spends CSV file path', 'data/level_b_spend.csv')
+    .option('--robust-scores', 'apply log1p transform to heavy-tailed columns for robustness')
     .parse();
 
   const options: CLIOptions = program.opts();

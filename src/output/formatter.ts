@@ -211,11 +211,25 @@ export class OutputFormatter {
    * Format complete output with all sections
    */
   formatComplete(result: AssignmentResult): string {
+    return this.formatCompleteWithStats(result, undefined);
+  }
+
+  /**
+   * Format complete output with comprehensive statistical analysis
+   */
+  formatCompleteWithStats(result: AssignmentResult, stats?: unknown): string {
     let output = '';
 
     output += this.formatTeamAssignments(result);
     output += this.formatTeamSummaryTable(result.teams);
     output += this.formatChangesSummary(result);
+
+    // Add comprehensive stats if provided
+    if (stats) {
+      output += '\n📊 **COMPREHENSIVE STATISTICAL ANALYSIS**\n';
+      output += '─'.repeat(70) + '\n';
+      // Add detailed statistics here if needed
+    }
 
     // Add footer
     output += '─'.repeat(70) + '\n';

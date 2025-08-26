@@ -13,9 +13,10 @@ export class MetricsCalculator {
    */
   static calculatePlayerScores(
     players: Player[],
-    weights: BalanceMetrics = this.DEFAULT_WEIGHTS
+    weights: BalanceMetrics = this.DEFAULT_WEIGHTS,
+    useRobustScores: boolean = false
   ): PlayerWithScore[] {
-    const normalized = this.normalizeMetrics(players);
+    const normalized = this.normalizeMetrics(players, useRobustScores);
 
     return players.map((player, index) => ({
       ...player,
@@ -25,8 +26,10 @@ export class MetricsCalculator {
 
   /**
    * Normalize all metrics to 0-1 scale for fair comparison
+   * @param players - Array of players to normalize
+   * @param useRobustScores - Apply log1p transform to heavy-tailed distributions
    */
-  private static normalizeMetrics(players: Player[]): {
+  private static normalizeMetrics(players: Player[], useRobustScores: boolean = false): {
     engagement: number;
     activity: number;
     points: number;
@@ -36,11 +39,18 @@ export class MetricsCalculator {
       return [];
     }
 
-    // Get min/max values for each metric
-    const engagements = players.map((p) => p.historical_event_engagements);
+    // Get raw values for each metric
+    let engagements = players.map((p) => p.historical_event_engagements);
     const activities = players.map((p) => p.days_active_last_30);
-    const points = players.map((p) => p.current_total_points);
+    let points = players.map((p) => p.current_total_points);
     const streaks = players.map((p) => p.current_streak_value);
+
+    // Apply robust scoring (log1p transform) to heavy-tailed distributions
+    if (useRobustScores) {
+      // Transform engagements and points (typically heavy-tailed)
+      engagements = engagements.map(val => Math.log1p(val));
+      points = points.map(val => Math.log1p(val));
+    }
 
     const ranges = {
       engagement: { min: Math.min(...engagements), max: Math.max(...engagements) },
@@ -49,12 +59,17 @@ export class MetricsCalculator {
       streak: { min: Math.min(...streaks), max: Math.max(...streaks) },
     };
 
-    return players.map((player) => ({
-      engagement: this.normalize(player.historical_event_engagements, ranges.engagement),
-      activity: this.normalize(player.days_active_last_30, ranges.activity),
-      points: this.normalize(player.current_total_points, ranges.points),
-      streak: this.normalize(player.current_streak_value, ranges.streak),
-    }));
+    return players.map((player, index) => {
+      const engagementValue = useRobustScores ? engagements[index] : player.historical_event_engagements;
+      const pointsValue = useRobustScores ? points[index] : player.current_total_points;
+      
+      return {
+        engagement: this.normalize(engagementValue, ranges.engagement),
+        activity: this.normalize(player.days_active_last_30, ranges.activity),
+        points: this.normalize(pointsValue, ranges.points),
+        streak: this.normalize(player.current_streak_value, ranges.streak),
+      };
+    });
   }
 
   /**

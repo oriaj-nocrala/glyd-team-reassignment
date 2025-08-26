@@ -20,7 +20,8 @@ export class TeamShuffler {
   async assignTeams(
     players: Player[],
     targetTeams: number,
-    optimizeBalance: boolean = true
+    optimizeBalance: boolean = true,
+    useRobustScores: boolean = false
   ): Promise<AssignmentResult> {
     if (players.length === 0) {
       throw new Error('No players provided for team assignment');
@@ -33,8 +34,8 @@ export class TeamShuffler {
 
     logger.log(SeedManager.formatSeedInfo(this.seed, finalSeed));
 
-    // Calculate player scores
-    const playersWithScores = MetricsCalculator.calculatePlayerScores(players);
+    // Calculate player scores (with robust scoring if requested)
+    const playersWithScores = MetricsCalculator.calculatePlayerScores(players, undefined, useRobustScores);
 
     // Create initial team assignments
     let teams = this.createInitialAssignment(playersWithScores, targetTeams);

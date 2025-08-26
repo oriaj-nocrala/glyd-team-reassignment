@@ -33,6 +33,10 @@ describe('OutputFormatter', () => {
       score_range: { min: 0.8, max: 0.8 },
       size_balance: { min_size: 1, max_size: 1, size_difference: 0 },
       justification: 'Perfectly balanced.',
+      activity_stats: {
+        overall_active_last_7_days_percentage: 100,
+        teams_active_last_7_days_percentage: [{ team_id: 1, percentage: 100 }],
+      },
     },
   };
 
